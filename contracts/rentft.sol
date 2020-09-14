@@ -539,7 +539,6 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
     /**
      * Receive the price response in the form of uint256
      */
-
     function fulfill(bytes32 _requestId, uint256 _price)
         public
         recordChainlinkFulfillment(_requestId)
