@@ -8,6 +8,7 @@ import "./utils/ContextUpgradeSafe.sol";
 import "./utils/Initializable.sol";
 import "./utils/Helper.sol";
 
+
 interface AToken {
     /**
      * @dev redirects the interest generated to a target address.
@@ -60,9 +61,8 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
         address owner;
         address borrower;
         uint256 duration;
-        uint256 price;
-        uint256 rent;
-        bool active; // used to check if there is an entry in assets mapping
+        uint256 nftPrice;
+        uint256 collateral;
     }
 
     // proxy details
@@ -72,23 +72,21 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
     // nft address => token id => asset info struct
     mapping(address => mapping(uint256 => Asset)) public assets;
 
-    // nft address => nft price (some token Ids may be inactive
-    // when we need to compute the price, loops are expensive to
-    // find an id that is active, it is easier to store the prices separately)
-    // ! TODO: most likely we need to somehow merge the above assets mapping and
-    // this one
-    // ! TODO: also need a mechanism to ensure taht this price is always relevant
-    // and is not from a year ago
-    mapping(address => uint256) public nftPrices;
-
+    uint256 ourInterestProxy;
     uint256 nftPrice; // TODO: does this makr it public? is this a conventional way of doing it? I have seen nftPrice being set below. Seems a bit strange
     address private oracle;
     bytes32 private jobId;
     uint256 private chainlinkFee; // what is this?
-    uint256 private collateralDailyFee = 100; // this fee is added on top of the collateral for each hold day of the NFT. This is used to cancel out any potential swings in the price of the NFT
+    uint256 public collateralDailyFee = 100; // this fee is added on top of the collateral for each hold day of the NFT. This is used to cancel out any potential swings in the price of the NFT
     // denoted in bps (basis points). 1% is 100 bps. 0.1% is 10 bps and equivalently 0.01% is 1 bps.
-    uint256 private ourFee = 500; // this is how much we are earning on each rent transaction
-    // we charge 5% on top of the final rent price for our services
+    // kovan aETH address
+
+    AToken public aETH = AToken(address(0xD483B49F2d55D2c53D32bE6efF735cB001880F79));
+    // last balances to compute the diff to deposit
+    uint256 public lastETHBalance = 0;
+    uint256 public lastaETHBalance = 0;
+    // uint256 public lastDAIBalance = 0;
+    // uint256 public lastIERC20Balance = 0;
 
     /**
      * Network: Kovan
@@ -138,7 +136,6 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
             duration,
             nftPrice,
             0,
-            true, // ! says that there is an entry in assets
         );
 
         assets[nftAddress] = nftPrice;
@@ -153,21 +150,22 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
      * @param _nft the address of the NFT that the user wishes to rent out
      * @return the total collateral + fee the borrower has to put up
      **/
-    function calculateRentPrice(uint256 _duration, address _nft) public returns(uint256) {
+    function calculateCollateral(uint256 _duration, address _nft, uint256 _tokenId) public returns(uint256) {
         // ! TODO: need to ensure that this nftPrice is relevant, and is not old
         // can we invoke chainlink price update here before computing the rentPrice?
-
-        // rentPrice = _nft_price * ((collateralDailyFee) ** _duration)
-        // rentPrice (with our service fee) = rentPrice * ourFee
-        uint256 principal = assets[nftAddress];
+        // collateral = _nft_price * ((collateralDailyFee) ** _duration)
+        // collateral (with our service fee) = rentPrice * ourFee
+        // ! this must always be populated, otherwise an error will be thrown
+        uint256 collateral = assets[nftAddress][_tokenId];
 
         // * interest compounding
-        for (i=0; i<_duration; i++) {
-            principal = (principal).add(principal.mul(collateralDailyFee.div(10000)));
+        for (i=0; i< _duration; i++) {
+            collateral = (collateral).add(collateral.mul(collateralDailyFee).div(10000));
         }
-        uint256 rentPrice = principal.add(principal.mul(ourFee.div(10000)));
 
-        return rentPrice;
+        // this though returns price in ETH
+        // we need an ability to convert it into whatever
+        return collateral;
     }
 
     // to rent the contract:
@@ -188,12 +186,34 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
             "someone already rented out this NFT"
         );
 
-        uint256 rentPrice = calculateRentPrice(_duration, _nft);
-        // TODO: needs to check the value in different ERC20 currencies?
-        require(msg.value >= rentPrice, "the price is not adequate");
+        // ! this may be wrong. This needs to accept either ETH or some other IERC20 token
+        // for example, DAI
+        // ! this would be more difficult to implement, we would last{IERC20}Balance for each
+        // accepted token. For now let's just use ETH
+        uint256 collateral = calculateCollateral(_duration, _nft, _tokenId);
 
-        // take the portion for ourselves (5%)
-        // our portion goes into Aave too
+        require(msg.value > 0, "you need to pay the collateral");
+        uint256 collateral = calculateCollateral(_duration, _nft, _tokenId);
+        // TODO: check this in other currencies
+        require(msg.value >= collateral, "the collateral is not adequate");
+
+        // deposit all of the collateral with deposit
+        // 0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5 - is the LendingPoolAddressesProvider
+        // on Kovan
+        LendingPool lendingPool = LendingPool(address(0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5));
+        lendingPool.deposit(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), msg.value, 0);
+
+        // mark the last ETHBalance with an update value of the total locked ETH
+        // lastEthBalance = (this.balance).add(msg.value);
+
+        // // determine how much aETH we received
+        // uint256 newAETHBalance = aETH.balanceOf(address(this));
+        // require(newAETHBalance > lastaETHBalance, "no new aETH");
+        // uint256 diffAETHBalance = newAETHBalance.sub(lastaETHBalance);
+        // lastaETHBalance = newAETHBalance;
+
+        // and then immediately redirect to proxy
+        aETH.redirectInterestStream(proxyInfo[_owner][_borrower]);
     }
 
     // create the proxy contract for managing interest when a borrower rents it out
@@ -203,7 +223,8 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
             _owner
         );
         // Deploy proxy
-        // for testing the the address of the proxy contract whoch will be used to redirect interest will come here
+        // for testing the address of the proxy contract which will
+        // be used to redirect interest will come here
         address _intermediate = deployMinimal(oracle, _payload);
         // user address is just recorded for tracking the proxy for the particular pair
         // TODO: need to test this for same owner but different user
