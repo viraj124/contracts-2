@@ -39,7 +39,8 @@ interface LendingPool {
 contract InterestCalculatorProxy is Helper, Initializable, OwnableUpgradeSafe {
     event Initialized(address indexed thisAddress);
 
-    // proxy admin would be thw owner to prevent in fraud cases where user doesn't return the nft back
+    // proxy admin would be the owner to prevent in fraud cases where the borrower
+    // doesn't return the nft back
     function initialize(address _owner) public initializer {
         OwnableUpgradeSafe.__Ownable_init();
         OwnableUpgradeSafe.transferOwnership(_owner);
@@ -55,14 +56,13 @@ contract InterestCalculatorProxy is Helper, Initializable, OwnableUpgradeSafe {
 contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
     using SafeMath for uint256;
 
-    uint256 nftPrice;
-
     struct Asset {
         address owner;
         address borrower;
         uint256 duration;
         uint256 price;
         uint256 rent;
+        bool active; // used to check if there is an entry in assets mapping
     }
 
     // proxy details
@@ -72,9 +72,23 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
     // nft address => token id => asset info struct
     mapping(address => mapping(uint256 => Asset)) public assets;
 
+    // nft address => nft price (some token Ids may be inactive
+    // when we need to compute the price, loops are expensive to
+    // find an id that is active, it is easier to store the prices separately)
+    // ! TODO: most likely we need to somehow merge the above assets mapping and
+    // this one
+    // ! TODO: also need a mechanism to ensure taht this price is always relevant
+    // and is not from a year ago
+    mapping(address => uint256) public nftPrices;
+
+    uint256 nftPrice; // TODO: does this makr it public? is this a conventional way of doing it? I have seen nftPrice being set below. Seems a bit strange
     address private oracle;
     bytes32 private jobId;
-    uint256 private fee;
+    uint256 private chainlinkFee; // what is this?
+    uint256 private collateralDailyFee = 100; // this fee is added on top of the collateral for each hold day of the NFT. This is used to cancel out any potential swings in the price of the NFT
+    // denoted in bps (basis points). 1% is 100 bps. 0.1% is 10 bps and equivalently 0.01% is 1 bps.
+    uint256 private ourFee = 500; // this is how much we are earning on each rent transaction
+    // we charge 5% on top of the final rent price for our services
 
     /**
      * Network: Kovan
@@ -87,7 +101,7 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
         setPublicChainlinkToken();
         oracle = 0x2f90A6D021db21e1B2A077c5a37B3C7E75D15b7e;
         jobId = "29fa9aa13bf1468788b7cc4a500a45b8";
-        fee = 0.1 * 10**18; // 0.1 LINK
+        chainlinkFee = 0.1 * 10**18; // 0.1 LINK
     }
 
     // function to list the nft on the platform
@@ -115,7 +129,7 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
         request.addInt("times", 1000000000000000000);
 
         // Sends the request
-        sendChainlinkRequestTo(oracle, request, fee);
+        sendChainlinkRequestTo(oracle, request, chainlinkFee);
 
         // need to verify whether the nftPrice will have the latest value
         assets[nftAddress][nftId] = Asset(
@@ -123,8 +137,63 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
             address(0),
             duration,
             nftPrice,
-            0
+            0,
+            true, // ! says that there is an entry in assets
         );
+
+        assets[nftAddress] = nftPrice;
+    }
+
+    /**
+     * @dev calculates the rent price of the NFT. Imagine virtual museums that rent out
+     * the NFTs of the artists for some time. Therefore, there is a potential for reputation
+     * here. If the borrower has consistently good renting track-record, they will get more
+     * favourable quotes
+     * @param _duration number of days that the user wishes to rent out the NFT for. 1 means 1 day
+     * @param _nft the address of the NFT that the user wishes to rent out
+     * @return the total collateral + fee the borrower has to put up
+     **/
+    function calculateRentPrice(uint256 _duration, address _nft) public returns(uint256) {
+        // ! TODO: need to ensure that this nftPrice is relevant, and is not old
+        // can we invoke chainlink price update here before computing the rentPrice?
+
+        // rentPrice = _nft_price * ((collateralDailyFee) ** _duration)
+        // rentPrice (with our service fee) = rentPrice * ourFee
+        uint256 principal = assets[nftAddress];
+
+        // * interest compounding
+        for (i=0; i<_duration; i++) {
+            principal = (principal).add(principal.mul(collateralDailyFee.div(10000)));
+        }
+        uint256 rentPrice = principal.add(principal.mul(ourFee.div(10000)));
+
+        return rentPrice;
+    }
+
+    // to rent the contract:
+    // 1. the borrower must have paid the indicated price (need a function to calculate this price)
+    // validations:
+    // 1. the borrower can't be borrowing the borrowed nft
+    // (this check also ensures that the borrower is not the
+    // owner & that the borrower isn't borrowing what he already borrowed)
+    function rent(
+        address _owner,
+        address _borrower,
+        uint256 _duration,
+        address _nft,
+        uint256 _tokenId,
+    ) external {
+        require(
+            assets[_nft][_tokenId].active == false,
+            "someone already rented out this NFT"
+        );
+
+        uint256 rentPrice = calculateRentPrice(_duration, _nft);
+        // TODO: needs to check the value in different ERC20 currencies?
+        require(msg.value >= rentPrice, "the price is not adequate");
+
+        // take the portion for ourselves (5%)
+        // our portion goes into Aave too
     }
 
     // create the proxy contract for managing interest when a borrower rents it out
