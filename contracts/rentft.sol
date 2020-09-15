@@ -127,8 +127,8 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
         );
     }
 
-    // create the proxy contract for managing interest when a user rents it out
-    function createProxy(address _owner, address _user) internal {
+    // create the proxy contract for managing interest when a borrower rents it out
+    function createProxy(address _owner, address _borrower) internal {
         bytes memory _payload = abi.encodeWithSignature(
             "initialize(address)",
             _owner
@@ -138,18 +138,19 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
         address _intermediate = deployMinimal(oracle, _payload);
         // user address is just recorded for tracking the proxy for the particular pair
         // TODO: need to test this for same owner but different user
-        proxyInfo[_owner][_user] = _intermediate;
+        proxyInfo[_owner][_borrower] = _intermediate;
     }
 
-    // check whether the proxy contract exists or not for a owner-user pair
-    function getProxy(address _owner, address _user)
-        public
+    // check whether the proxy contract exists or not for a owner-borrower pair
+    function getProxy(address _owner, address _borrower)
+        internal
         view
         returns (address)
     {
-        return proxyInfo[_owner][_user];
+        return proxyInfo[_owner][_borrower];
     }
 
+    // ! can this actually be public? Wouldn't that mean that anyone can set the nftPrice with a correct requestId?
     /**
      * Receive the price response in the form of uint256
      */
