@@ -8,7 +8,6 @@ import "./utils/ContextUpgradeSafe.sol";
 import "./utils/Initializable.sol";
 import "./utils/Helper.sol";
 
-
 interface AToken {
     /**
      * @dev redirects the interest generated to a target address.
@@ -81,10 +80,13 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
     // denoted in bps (basis points). 1% is 100 bps. 0.1% is 10 bps and equivalently 0.01% is 1 bps.
     // kovan aETH address
 
-    AToken public aETH = AToken(address(0xD483B49F2d55D2c53D32bE6efF735cB001880F79));
+    AToken public aETH = AToken(
+        address(0xD483B49F2d55D2c53D32bE6efF735cB001880F79)
+    );
     // last balances to compute the diff to deposit
     uint256 public lastETHBalance = 0;
     uint256 public lastaETHBalance = 0;
+
     // uint256 public lastDAIBalance = 0;
     // uint256 public lastIERC20Balance = 0;
 
@@ -135,10 +137,8 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
             address(0),
             duration,
             nftPrice,
-            0,
+            0
         );
-
-        assets[nftAddress] = nftPrice;
     }
 
     /**
@@ -150,17 +150,23 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
      * @param _nft the address of the NFT that the user wishes to rent out
      * @return the total collateral + fee the borrower has to put up
      **/
-    function calculateCollateral(uint256 _duration, address _nft, uint256 _tokenId) public returns(uint256) {
+    function calculateCollateral(
+        uint256 _duration,
+        address _nft,
+        uint256 _tokenId
+    ) public view returns (uint256) {
         // ! TODO: need to ensure that this nftPrice is relevant, and is not old
         // can we invoke chainlink price update here before computing the rentPrice?
         // collateral = _nft_price * ((collateralDailyFee) ** _duration)
         // collateral (with our service fee) = rentPrice * ourFee
         // ! this must always be populated, otherwise an error will be thrown
-        uint256 collateral = assets[nftAddress][_tokenId];
+        uint256 collateral = assets[_nft][_tokenId].nftPrice;
 
         // * interest compounding
-        for (i=0; i< _duration; i++) {
-            collateral = (collateral).add(collateral.mul(collateralDailyFee).div(10000));
+        for (uint256 i = 0; i < _duration; i++) {
+            collateral = (collateral).add(
+                collateral.mul(collateralDailyFee).div(10000)
+            );
         }
 
         // this though returns price in ETH
@@ -179,19 +185,11 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
         address _borrower,
         uint256 _duration,
         address _nft,
-        uint256 _tokenId,
-    ) external {
-        require(
-            assets[_nft][_tokenId].active == false,
-            "someone already rented out this NFT"
-        );
+        uint256 _tokenId
+    ) external payable {
+        require(assets[_nft][_tokenId].duration > 0, "could not find an NFT");
 
-        // ! this may be wrong. This needs to accept either ETH or some other IERC20 token
-        // for example, DAI
-        // ! this would be more difficult to implement, we would last{IERC20}Balance for each
-        // accepted token. For now let's just use ETH
-        uint256 collateral = calculateCollateral(_duration, _nft, _tokenId);
-
+        // ! we only need DAI here to begin with
         require(msg.value > 0, "you need to pay the collateral");
         uint256 collateral = calculateCollateral(_duration, _nft, _tokenId);
         // TODO: check this in other currencies
@@ -200,8 +198,14 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
         // deposit all of the collateral with deposit
         // 0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5 - is the LendingPoolAddressesProvider
         // on Kovan
-        LendingPool lendingPool = LendingPool(address(0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5));
-        lendingPool.deposit(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), msg.value, 0);
+        LendingPool lendingPool = LendingPool(
+            address(0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5)
+        );
+        lendingPool.deposit(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            msg.value,
+            0
+        );
 
         // mark the last ETHBalance with an update value of the total locked ETH
         // lastEthBalance = (this.balance).add(msg.value);
