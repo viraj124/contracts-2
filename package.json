@@ -1,4 +1,5 @@
 {
+  "license": "MIT",
   "dependencies": {
     "@chainlink/contracts": "^0.0.10",
     "@truffle/hdwallet-provider": "^1.0.44",
