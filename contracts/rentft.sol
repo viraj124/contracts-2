@@ -2,7 +2,9 @@
 pragma solidity ^0.6.0;
 
 import "@chainlink/contracts/src/v0.6/ChainlinkClient.sol";
-import "./utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./utils/ProxyFactory.sol";
 import "./utils/OwnableUpgradeSafe.sol";
 import "./utils/ContextUpgradeSafe.sol";
@@ -56,8 +58,14 @@ contract InterestCalculatorProxy is Helper, Initializable, OwnableUpgradeSafe {
   }
 }
 
-contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
-  using SafeMath for uint256;
+contract Rentft is
+  ProxyFactory,
+  ChainlinkClient,
+  InterestCalculatorProxy,
+  ReentrancyGuard
+{
+  // using SafeMath for uint256;
+  using SafeERC20 for ERC20;
 
   struct Asset {
     address owner;
@@ -85,6 +93,7 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
   // equivalently 0.01% is 1 bps. The mechanism for computing the rent will
   // change in the future, to be more efficient and meaningful
   uint256 public collateralDailyFee = 100;
+  address public ethAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
   ILendingPoolAddressesProvider public addressesProvider;
   ILendingPoolCore public core;
@@ -170,7 +179,8 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
     // * interest compounding
     for (uint256 i = 0; i < _duration; i++) {
       collateral = (collateral).add(
-        collateral.mul(collateralDailyFee).div(10000)
+        2
+        // collateral.mul(collateralDailyFee).div(10000)
       );
     }
 
@@ -179,8 +189,45 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
     return collateral;
   }
 
+  /**
+   * @dev transfers an amount from a user to the destination proxy address where it
+   * subsequently gets deposited into Aave
+   * @param _reserve the address of the reserve where the amount is being transferred
+   * @param _user the address of the user from where the transfer is happening
+   * @param _amount the amount being transferred
+   **/
+  function transferToProxy(
+    address _reserve,
+    address payable _user,
+    uint256 _amount,
+    address _proxy
+  ) private {
+    if (_reserve != ethAddress) {
+      require(
+        msg.value == 0,
+        "User is sending ETH along with the ERC20 transfer."
+      );
+      // ! our contract should be approved to move his ERC20 funds
+      ERC20(_reserve).safeTransferFrom(_user, _proxy, _amount);
+    } else {
+      // * this is used for ETH. we don't need it for now
+      require(
+        msg.value >= _amount,
+        "The amount and the value sent to deposit do not match"
+      );
+
+      if (msg.value > _amount) {
+        //send back excess ETH
+        uint256 excessAmount = msg.value.sub(_amount);
+        //solium-disable-next-line
+        (bool result, ) = _user.call{value: excessAmount, gas: 50000}("");
+        require(result, "Transfer of ETH failed");
+      }
+    }
+  }
+
   // to rent the contract:
-  // 1. the borrower must have paid the indicated price (need a function to calculate this price)
+  // 1. the borrower must have paid the indicated collateral
   // validations:
   // 1. the borrower can't be borrowing the borrowed nft
   // (this check also ensures that the borrower is not the
@@ -190,39 +237,27 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
     address _borrower,
     uint256 _duration,
     address _nft,
-    uint256 _tokenId
-  ) external payable {
+    uint256 _tokenId,
+    uint256 _collateralOffered,
+    address payable _currencyCollateralPaidIn
+  ) external payable nonReentrant returns (bool) {
     require(assets[_nft][_tokenId].duration > 0, "could not find an NFT");
 
     // ! we only need DAI here to begin with
-    require(msg.value > 0, "you need to pay the collateral");
+    // require(msg.value > 0, "you need to pay the collateral");
     uint256 collateral = calculateCollateral(_duration, _nft, _tokenId);
-    // TODO: check this in other currencies
-    require(msg.value >= collateral, "the collateral is not adequate");
+    require(collateral >= _collateralOffered, "the collateral is too low");
 
-    // deposit all of the collateral with deposit
-    // 0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5 - is the LendingPoolAddressesProvider
-    // on Kovan
-    LendingPool lendingPool = LendingPool(
-      address(0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5)
-    );
-    lendingPool.deposit(
-      address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
-      msg.value,
-      0
+    // ? Is this going to fail? proxy isn't payable
+    // ! will fail if the msg.sender hasn't approved us as the spender of their ERC20 tokens
+    transferToProxy(
+      _currencyCollateralPaidIn,
+      msg.sender,
+      _collateralOffered,
+      proxyInfo[_owner][_borrower]
     );
 
-    // mark the last ETHBalance with an update value of the total locked ETH
-    // lastEthBalance = (this.balance).add(msg.value);
-
-    // // determine how much aETH we received
-    // uint256 newAETHBalance = aETH.balanceOf(address(this));
-    // require(newAETHBalance > lastaETHBalance, "no new aETH");
-    // uint256 diffAETHBalance = newAETHBalance.sub(lastaETHBalance);
-    // lastaETHBalance = newAETHBalance;
-
-    // and then immediately redirect to proxy
-    // aETH.redirectInterestStream(proxyInfo[_owner][_borrower]);
+    return true;
   }
 
   // create the proxy contract for managing interest when a borrower rents it out
