@@ -178,10 +178,7 @@ contract Rentft is
 
     // * interest compounding
     for (uint256 i = 0; i < _duration; i++) {
-      collateral = (collateral).add(
-        2
-        // collateral.mul(collateralDailyFee).div(10000)
-      );
+      collateral = (collateral).add(collateral.mul(collateralDailyFee).div(10000));
     }
 
     // this though returns price in ETH
@@ -208,7 +205,7 @@ contract Rentft is
         "User is sending ETH along with the ERC20 transfer."
       );
       // ! our contract should be approved to move his ERC20 funds
-      ERC20(_reserve).safeTransferFrom(_user, _proxy, _amount);
+      ERC20(_reserve).safeTransferFrom(address(this), _proxy, _amount);
     } else {
       // * this is used for ETH. we don't need it for now
       require(
