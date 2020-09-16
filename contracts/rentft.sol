@@ -2,12 +2,14 @@
 pragma solidity ^0.6.0;
 
 import "@chainlink/contracts/src/v0.6/ChainlinkClient.sol";
-import "./utils/SafeMath.sol";
+import "./utils/math/SafeMath.sol";
 import "./utils/ProxyFactory.sol";
 import "./utils/OwnableUpgradeSafe.sol";
 import "./utils/ContextUpgradeSafe.sol";
 import "./utils/Initializable.sol";
 import "./utils/Helper.sol";
+import "./interfaces/ILendingPoolAddressProvider.sol";
+import "./interfaces/ILendingPoolCore.sol";
 
 interface AToken {
   /**
@@ -72,23 +74,20 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
   // nft address => token id => asset info struct
   mapping(address => mapping(uint256 => Asset)) public assets;
 
-  uint256 ourInterestProxy;
-  uint256 nftPrice;
+  uint256 public ourInterestProxy;
+  uint256 private nftPrice;
   address private oracle;
   bytes32 private jobId;
   uint256 private chainlinkFee;
   // this fee is added on top of the collateral for each hold day of the NFT.
   // This is used to cancel out any potential swings in the price of the NFT
   // denoted in bps (basis points). 1% is 100 bps. 0.1% is 10 bps and
-  // equivalently 0.01% is 1 bps.
+  // equivalently 0.01% is 1 bps. The mechanism for computing the rent will
+  // change in the future, to be more efficient and meaningful
   uint256 public collateralDailyFee = 100;
 
-  AToken public aETH = AToken(
-    address(0xD483B49F2d55D2c53D32bE6efF735cB001880F79)
-  );
-  // last balances to compute the diff to deposit
-  uint256 public lastETHBalance = 0;
-  uint256 public lastaETHBalance = 0;
+  ILendingPoolAddressesProvider public addressesProvider;
+  ILendingPoolCore public core;
 
   /**
    * Network: Kovan
@@ -97,11 +96,17 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
    * Link: 0xa36085F69e2889c224210F603D836748e7dC0088
    * Fee: 0.1 LINK
    */
-  constructor() public {
+  // provide aave address provider for the network you are working on
+  // get all aave related addresses through addressesProvider state var
+  // get all aToken reserve addresses through the core state var
+  constructor(address _aaveAdressesProvider) public {
     setPublicChainlinkToken();
     oracle = 0x2f90A6D021db21e1B2A077c5a37B3C7E75D15b7e;
     jobId = "29fa9aa13bf1468788b7cc4a500a45b8";
     chainlinkFee = 0.1 * 10**18; // 0.1 LINK
+
+    addressesProvider = ILendingPoolAddressesProvider(_aaveAdressesProvider);
+    core = ILendingPoolCore(addressesProvider.getLendingPoolCore());
   }
 
   // function to list the nft on the platform
@@ -217,7 +222,7 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
     // lastaETHBalance = newAETHBalance;
 
     // and then immediately redirect to proxy
-    aETH.redirectInterestStream(proxyInfo[_owner][_borrower]);
+    // aETH.redirectInterestStream(proxyInfo[_owner][_borrower]);
   }
 
   // create the proxy contract for managing interest when a borrower rents it out
