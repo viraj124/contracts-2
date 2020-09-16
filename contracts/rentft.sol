@@ -1,419 +1,53 @@
 pragma solidity ^0.6.0;
 
-import "https://raw.githubusercontent.com/smartcontractkit/chainlink/develop/evm-contracts/src/v0.6/ChainlinkClient.sol";
-
-/**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
- */
-library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
-    function add(int256 a, int256 b) internal pure returns (int256) {
-        int256 c = a + b;
-        require(c >= a, "SafeMath: addition overflow");
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(int256 a, int256 b) internal pure returns (int256) {
-        return sub(a, b, "SafeMath: subtraction overflow");
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(int256 a, int256 b, string memory errorMessage) internal pure returns (int256) {
-        require(b <= a, errorMessage);
-        int256 c = a - b;
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function mul(int256 a, int256 b) internal pure returns (int256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) {
-            return 0;
-        }
-
-        int256 c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers. Reverts on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(int256 a, int256 b) internal pure returns (int256) {
-        return div(a, b, "SafeMath: division by zero");
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(int256 a, int256 b, string memory errorMessage) internal pure returns (int256) {
-        require(b > 0, errorMessage);
-        int256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(int256 a, int256 b) internal pure returns (int256) {
-        return mod(a, b, "SafeMath: modulo by zero");
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts with custom message when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(int256 a, int256 b, string memory errorMessage) internal pure returns (int256) {
-        require(b != 0, errorMessage);
-        return a % b;
-    }
-}
+import "@chainlink/contracts/src/v0.6/ChainlinkClient.sol";
+import "./utils/SafeMath.sol";
+import "./utils/ProxyFactory.sol";
+import "./utils/OwnableUpgradeSafe.sol";
+import "./utils/ContextUpgradeSafe.sol";
+import "./utils/Initializable.sol";
+import "./utils/Helper.sol";
 
 interface AToken {
     /**
-    * @dev redirects the interest generated to a target address.
-    * when the interest is redirected, the user balance is added to
-    * the recepient redirected balance.
-    * @param _to the address to which the interest will be redirected
-    **/
+     * @dev redirects the interest generated to a target address.
+     * when the interest is redirected, the user's balance is added to
+     * the recepient's redirected balance.
+     * @param _to the address to which the interest will be redirected
+     **/
     function redirectInterestStream(address _to) external;
-    
+
     /**
-    * @dev calculates the balance of the user, which is the
-    * principal balance + interest generated by the principal balance + interest generated by the redirected balance
-    * @param _user the user for which the balance is being calculated
-    * @return the total balance of the user
-    **/
-    function balanceOf(address _user) external view returns(uint256);
+     * @dev calculates the balance of the user, which is the
+     * principal balance + interest generated by the principal balance +
+     * interest generated by the redirected balance
+     * @param _user the user for which the balance is being calculated
+     * @return the total balance of the user
+     **/
+    function balanceOf(address _user) external view returns (uint256);
 }
-
-
 
 // Aave Lending Pool Interface
 interface LendingPool {
-    function deposit(address _reserve, uint256 _amount, uint16 _referralCode) external;
+    function deposit(
+        address _reserve,
+        uint256 _amount,
+        uint16 _referralCode
+    ) external;
 }
-
-
-// solium-disable security/no-inline-assembly
-// solium-disable security/no-low-level-calls
-// Open Zepplin proxy factory to create a proxy contract to monitor aave interest for a partcular owner - leasee pair
-contract ProxyFactory {
-
-  event ProxyCreated(address proxy);
-
-  function deployMinimal(address _logic, bytes memory _data) public returns (address proxy) {
-    // Adapted from https://github.com/optionality/clone-factory/blob/32782f82dfc5a00d103a7e61a17a5dedbd1e8e9d/contracts/CloneFactory.sol
-    bytes20 targetBytes = bytes20(_logic);
-    assembly {
-      let clone := mload(0x40)
-      mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
-      mstore(add(clone, 0x14), targetBytes)
-      mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
-      proxy := create(0, clone, 0x37)
-    }
-
-    emit ProxyCreated(address(proxy));
-
-    if(_data.length > 0) {
-      (bool success,) = proxy.call(_data);
-      require(success, "constructor call failed");
-    }
-  }
-}
-
-contract Helper {
-     /**
-     * @dev get Lending Pool kovan address
-     */
-    function getLendingPool() public pure returns (address lendingpool) {
-        lendingpool = 0x580D4Fdc4BF8f9b5ae2fb9225D584fED4AD5375c;
-    }
-    
-     /**
-     * @dev get adai kovan address
-     */
-    function getADAI() public pure returns (address adai) {
-        adai = 0x58AD4cB396411B691A9AAb6F74545b2C5217FE6a;
-    }
-}
-
-/**
- * @title Initializable
- *
- * @dev Helper contract to support initializer functions. To use it, replace
- * the constructor with a function that has the `initializer` modifier.
- * WARNING: Unlike constructors, initializer functions must be manually
- * invoked. This applies both to deploying an Initializable contract, as well
- * as extending an Initializable contract via inheritance.
- * WARNING: When used with inheritance, manual care must be taken to not invoke
- * a parent initializer twice, or ensure that all initializers are idempotent,
- * because this is not dealt with automatically as with constructors.
- */
-contract Initializable {
-
-  /**
-   * @dev Indicates that the contract has been initialized.
-   */
-  bool private initialized;
-
-  /**
-   * @dev Indicates that the contract is in the process of being initialized.
-   */
-  bool private initializing;
-
-  /**
-   * @dev Modifier to use in the initializer function of a contract.
-   */
-  modifier initializer() {
-    require(initializing || isConstructor() || !initialized, "Contract instance has already been initialized");
-
-    bool isTopLevelCall = !initializing;
-    if (isTopLevelCall) {
-      initializing = true;
-      initialized = true;
-    }
-
-    _;
-
-    if (isTopLevelCall) {
-      initializing = false;
-    }
-  }
-
-  /// @dev Returns true if and only if the function is running in the constructor
-  function isConstructor() private view returns (bool) {
-    // extcodesize checks the size of the code stored in an address, and
-    // address returns the current address. Since the code is still not
-    // deployed when running a constructor, any checks on its code size will
-    // yield zero, making it an effective way to detect if a contract is
-    // under construction or not.
-    address self = address(this);
-    uint256 cs;
-    assembly { cs := extcodesize(self) }
-    return cs == 0;
-  }
-
-  // Reserved storage space to allow for layout changes in the future.
-  uint256[50] private ______gap;
-}
-
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-contract ContextUpgradeSafe is Initializable {
-    // Empty internal constructor, to prevent people from mistakenly deploying
-    // an instance of this contract, which should be used via inheritance.
-
-    function __Context_init() internal initializer {
-        __Context_init_unchained();
-    }
-
-    function __Context_init_unchained() internal initializer {
-
-
-    }
-
-
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-
-    uint256[50] private __gap;
-}
-
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-contract OwnableUpgradeSafe is Initializable, ContextUpgradeSafe {
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-
-    function __Ownable_init() internal initializer {
-        __Context_init_unchained();
-        __Ownable_init_unchained();
-    }
-
-    function __Ownable_init_unchained() internal initializer {
-
-
-        address msgSender = _msgSender();
-        _owner = msgSender;
-        emit OwnershipTransferred(address(0), msgSender);
-
-    }
-
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(_owner == _msgSender(), "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
-    }
-
-    uint256[49] private __gap;
-}
-
 
 contract InterestCalculatorProxy is Helper, Initializable, OwnableUpgradeSafe {
     event Initialized(address indexed thisAddress);
 
-    // proxy admin would be thw owner to prevent in fraud cases where user doesn't return the nft back
+    // proxy admin would be the owner to prevent in fraud cases where the borrower
+    // doesn't return the nft back
     function initialize(address _owner) public initializer {
-	OwnableUpgradeSafe.__Ownable_init();
-    OwnableUpgradeSafe.transferOwnership(_owner);
-    emit Initialized(address(this));
+        OwnableUpgradeSafe.__Ownable_init();
+        OwnableUpgradeSafe.transferOwnership(_owner);
+        emit Initialized(address(this));
     }
-    
-    
-    function claimInterest() external view returns(uint) {
+
+    function claimInterest() external view returns (uint256) {
         // All calculations to be done in the parent contract
         return AToken(getADAI()).balanceOf(address(this));
     }
@@ -422,28 +56,40 @@ contract InterestCalculatorProxy is Helper, Initializable, OwnableUpgradeSafe {
 contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
     using SafeMath for uint256;
 
-    uint nftPrice;
-
     struct Asset {
-         address owner;
-         address borrower; 
-         uint duration;
-         uint price;
-         uint rent;
+        address owner;
+        address borrower;
+        uint256 duration;
+        uint256 nftPrice;
+        uint256 collateral;
     }
 
     // proxy details
     // owner => borrower => proxy
     mapping(address => mapping(address => address)) public proxyInfo;
-    
+
     // nft address => token id => asset info struct
-    mapping(address => mapping(uint => Asset)) public assets;
-    
-    
+    mapping(address => mapping(uint256 => Asset)) public assets;
+
+    uint256 ourInterestProxy;
+    uint256 nftPrice; // TODO: does this makr it public? is this a conventional way of doing it? I have seen nftPrice being set below. Seems a bit strange
     address private oracle;
     bytes32 private jobId;
-    uint256 private fee;
-    
+    uint256 private chainlinkFee; // what is this?
+    uint256 public collateralDailyFee = 100; // this fee is added on top of the collateral for each hold day of the NFT. This is used to cancel out any potential swings in the price of the NFT
+    // denoted in bps (basis points). 1% is 100 bps. 0.1% is 10 bps and equivalently 0.01% is 1 bps.
+    // kovan aETH address
+
+    AToken public aETH = AToken(
+        address(0xD483B49F2d55D2c53D32bE6efF735cB001880F79)
+    );
+    // last balances to compute the diff to deposit
+    uint256 public lastETHBalance = 0;
+    uint256 public lastaETHBalance = 0;
+
+    // uint256 public lastDAIBalance = 0;
+    // uint256 public lastIERC20Balance = 0;
+
     /**
      * Network: Kovan
      * Oracle: Chainlink - 0x2f90A6D021db21e1B2A077c5a37B3C7E75D15b7e
@@ -455,50 +101,156 @@ contract Rentft is ProxyFactory, ChainlinkClient, InterestCalculatorProxy {
         setPublicChainlinkToken();
         oracle = 0x2f90A6D021db21e1B2A077c5a37B3C7E75D15b7e;
         jobId = "29fa9aa13bf1468788b7cc4a500a45b8";
-        fee = 0.1 * 10 ** 18; // 0.1 LINK
+        chainlinkFee = 0.1 * 10**18; // 0.1 LINK
     }
 
-    // function to list the nft on the platform, url will be dynamic constructed on the js side
-    function addProduct(address nftAddress, uint nftId, uint duration, string calldata _url) external {
-     require(nftAddress != address(0), "Invalid NFT Address");
-     Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);
-        
-    // Set the URL to perform the GET request on
-    request.add("get", _url);
-        
-    // Set the path to find the desired data in the API response, where the response format is:
-    request.add("path", "last_sale.payment_token.usd_price");
-        
-    // Multiply the result by 100 to remove decimals
-    request.addInt("times", 1000000000000000000);
-        
-    // Sends the request
-    sendChainlinkRequestTo(oracle, request, fee);
+    // function to list the nft on the platform
+    // url will be the nft address
+    function addProduct(
+        address nftAddress,
+        uint256 nftId,
+        uint256 duration,
+        string calldata _url
+    ) external {
+        require(nftAddress != address(0), "Invalid NFT Address");
+        Chainlink.Request memory request = buildChainlinkRequest(
+            jobId,
+            address(this),
+            this.fulfill.selector
+        );
 
-    // need to verify whether the nftPrice will have the latest value
-    assets[nftAddress][nftId] = Asset(msg.sender, address(0), duration, nftPrice, 0);
+        // Set the URL to perform the GET request on
+        request.add("get", _url);
+
+        // Set the path to find the desired data in the API response, where the response format is:
+        request.add("path", "last_sale.payment_token.usd_price");
+
+        // Multiply the result by 100 to remove decimals
+        request.addInt("times", 1000000000000000000);
+
+        // Sends the request
+        sendChainlinkRequestTo(oracle, request, chainlinkFee);
+
+        // need to verify whether the nftPrice will have the latest value
+        assets[nftAddress][nftId] = Asset(
+            msg.sender,
+            address(0),
+            duration,
+            nftPrice,
+            0
+        );
     }
-    
-    // create the proxy contract for managing interest when a user rents it out
-    function createProxy(address _owner, address _user) internal{
-        bytes memory _payload = abi.encodeWithSignature("initialize(address)", _owner);
+
+    /**
+     * @dev calculates the rent price of the NFT. Imagine virtual museums that rent out
+     * the NFTs of the artists for some time. Therefore, there is a potential for reputation
+     * here. If the borrower has consistently good renting track-record, they will get more
+     * favourable quotes
+     * @param _duration number of days that the user wishes to rent out the NFT for. 1 means 1 day
+     * @param _nft the address of the NFT that the user wishes to rent out
+     * @return the total collateral + fee the borrower has to put up
+     **/
+    function calculateCollateral(
+        uint256 _duration,
+        address _nft,
+        uint256 _tokenId
+    ) public view returns (uint256) {
+        // ! TODO: need to ensure that this nftPrice is relevant, and is not old
+        // can we invoke chainlink price update here before computing the rentPrice?
+        // collateral = _nft_price * ((collateralDailyFee) ** _duration)
+        // collateral (with our service fee) = rentPrice * ourFee
+        // ! this must always be populated, otherwise an error will be thrown
+        uint256 collateral = assets[_nft][_tokenId].nftPrice;
+
+        // * interest compounding
+        for (uint256 i = 0; i < _duration; i++) {
+            collateral = (collateral).add(
+                collateral.mul(collateralDailyFee).div(10000)
+            );
+        }
+
+        // this though returns price in ETH
+        // we need an ability to convert it into whatever
+        return collateral;
+    }
+
+    // to rent the contract:
+    // 1. the borrower must have paid the indicated price (need a function to calculate this price)
+    // validations:
+    // 1. the borrower can't be borrowing the borrowed nft
+    // (this check also ensures that the borrower is not the
+    // owner & that the borrower isn't borrowing what he already borrowed)
+    function rent(
+        address _owner,
+        address _borrower,
+        uint256 _duration,
+        address _nft,
+        uint256 _tokenId
+    ) external payable {
+        require(assets[_nft][_tokenId].duration > 0, "could not find an NFT");
+
+        // ! we only need DAI here to begin with
+        require(msg.value > 0, "you need to pay the collateral");
+        uint256 collateral = calculateCollateral(_duration, _nft, _tokenId);
+        // TODO: check this in other currencies
+        require(msg.value >= collateral, "the collateral is not adequate");
+
+        // deposit all of the collateral with deposit
+        // 0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5 - is the LendingPoolAddressesProvider
+        // on Kovan
+        LendingPool lendingPool = LendingPool(
+            address(0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5)
+        );
+        lendingPool.deposit(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            msg.value,
+            0
+        );
+
+        // mark the last ETHBalance with an update value of the total locked ETH
+        // lastEthBalance = (this.balance).add(msg.value);
+
+        // // determine how much aETH we received
+        // uint256 newAETHBalance = aETH.balanceOf(address(this));
+        // require(newAETHBalance > lastaETHBalance, "no new aETH");
+        // uint256 diffAETHBalance = newAETHBalance.sub(lastaETHBalance);
+        // lastaETHBalance = newAETHBalance;
+
+        // and then immediately redirect to proxy
+        aETH.redirectInterestStream(proxyInfo[_owner][_borrower]);
+    }
+
+    // create the proxy contract for managing interest when a borrower rents it out
+    function createProxy(address _owner, address _borrower) internal {
+        bytes memory _payload = abi.encodeWithSignature(
+            "initialize(address)",
+            _owner
+        );
         // Deploy proxy
-        // for testing the the address of the proxy contract whoch will be used to redirect interest will come here
+        // for testing the address of the proxy contract which will
+        // be used to redirect interest will come here
         address _intermediate = deployMinimal(oracle, _payload);
         // user address is just recorded for tracking the proxy for the particular pair
         // TODO: need to test this for same owner but different user
-        proxyInfo[_owner][_user] = _intermediate;
+        proxyInfo[_owner][_borrower] = _intermediate;
     }
-    
-    // check whether the proxy contract exists or not for a owner-user pair
-    function getProxy(address _owner, address _user) public view  returns (address) {
-        return proxyInfo[_owner][_user];
+
+    // check whether the proxy contract exists or not for a owner-borrower pair
+    function getProxy(address _owner, address _borrower)
+        internal
+        view
+        returns (address)
+    {
+        return proxyInfo[_owner][_borrower];
     }
-    
+
+    // ! can this actually be public? Wouldn't that mean that anyone can set the nftPrice with a correct requestId?
     /**
      * Receive the price response in the form of uint256
-     */ 
-    function fulfill(bytes32 _requestId, uint256 _price) public recordChainlinkFulfillment(_requestId)
+     */
+    function fulfill(bytes32 _requestId, uint256 _price)
+        public
+        recordChainlinkFulfillment(_requestId)
     {
         nftPrice = _price;
     }
