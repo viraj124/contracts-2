@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.6.0;
 
 import "./Initializable.sol";
@@ -13,23 +14,23 @@ import "./Initializable.sol";
  * This contract is only required for intermediate, library-like contracts.
  */
 contract ContextUpgradeSafe is Initializable {
-    // Empty internal constructor, to prevent people from mistakenly deploying
-    // an instance of this contract, which should be used via inheritance.
+  // Empty internal constructor, to prevent people from mistakenly deploying
+  // an instance of this contract, which should be used via inheritance.
 
-    function __Context_init() internal initializer {
-        __Context_init_unchained();
-    }
+  function __Context_init() internal initializer {
+    __Context_init_unchained();
+  }
 
-    function __Context_init_unchained() internal initializer {}
+  function __Context_init_unchained() internal initializer {}
 
-    function _msgSender() internal virtual view returns (address payable) {
-        return msg.sender;
-    }
+  function _msgSender() internal virtual view returns (address payable) {
+    return msg.sender;
+  }
 
-    function _msgData() internal virtual view returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
+  function _msgData() internal virtual view returns (bytes memory) {
+    this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+    return msg.data;
+  }
 
-    uint256[50] private __gap;
+  uint256[50] private __gap;
 }
