@@ -32,16 +32,21 @@ interface AToken {
    * @return the total balance of the user
    **/
   function balanceOf(address _user) external view returns (uint256);
+  
+  function redeem(uint256 _amount) external;
 }
 
 contract InterestCalculatorProxy is Initializable, OwnableUpgradeSafe {
+  using  SafeERC20 for ERC20;
   event Initialized(address indexed thisAddress);
+  address public rentft;
 
   // proxy admin would be the owner to prevent in fraud cases where the borrower
   // doesn't return the nft back
-  function initialize(address _owner) public initializer {
+  function initialize(address _owner, address _rentft) public initializer {
     OwnableUpgradeSafe.__Ownable_init();
     OwnableUpgradeSafe.transferOwnership(_owner);
+    rentft = _rentft;
     emit Initialized(address(this));
   }
   
@@ -49,8 +54,22 @@ contract InterestCalculatorProxy is Initializable, OwnableUpgradeSafe {
     uint reserveBalance = ERC20(_reserve).balanceOf(address(this));
     ILendingPool(_lendingPool).deposit(_reserve, reserveBalance, 0);
   }
+  
+  // allow rentft to withdraw from aave
+  function withdraw(address _aToken) public returns(uint256) {
+      require(msg.sender == rentft, "Not Rentft");
+      
+      uint256 daiBalance = claimInterest(_aToken);
+      
+      // withdraw dai from aDai
+      AToken(_aToken).redeem(daiBalance);
+      
+      ERC20(_aToken).safeTransfer(rentft, daiBalance);
+      
+      return daiBalance;
+  }
 
-  function claimInterest(address _reserve) external view returns (uint256) {
+  function claimInterest(address _reserve) public view returns (uint256) {
     // All calculations to be done in the parent contract
     return AToken(_reserve).balanceOf(address(this));
   }
@@ -68,6 +87,7 @@ contract Rentft is
     address owner;
     address borrower;
     uint256 duration;
+    uint256 borrowedAt;     // unix timestamp
     uint256 nftPrice;
     uint256 collateral;
   }
@@ -90,7 +110,8 @@ contract Rentft is
   // equivalently 0.01% is 1 bps. The mechanism for computing the rent will
   // change in the future, to be more efficient and meaningful
   uint256 public collateralDailyFee = 100;
-  address public ethAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+  address public daiAddress = 0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD;
+  address public aDaiAddress = 0x58AD4cB396411B691A9AAb6F74545b2C5217FE6a;
 
   ILendingPoolAddressesProvider public lendingPoolAddressProvider;
   ILendingPool public lendingPool;
@@ -116,7 +137,7 @@ contract Rentft is
   }
 
   // function to list the nft on the platform
-  // url will be the nft address
+  // url will be the api endpoint to fetch nft price
   function addProduct(
     address nftAddress,
     uint256 nftId,
@@ -124,29 +145,15 @@ contract Rentft is
     string calldata _url
   ) external {
     require(nftAddress != address(0), "Invalid NFT Address");
-    Chainlink.Request memory request = buildChainlinkRequest(
-      jobId,
-      address(this),
-      this.fulfill.selector
-    );
-
-    // Set the URL to perform the GET request on
-    request.add("get", _url);
-
-    // Set the path to find the desired data in the API response, where the response format is:
-    request.add("path", "last_sale.payment_token.usd_price");
-
-    // Multiply the result by 100 to remove decimals
-    request.addInt("times", 1000000000000000000);
-
-    // Sends the request
-    sendChainlinkRequestTo(oracle, request, chainlinkFee);
+    
+    fetchNFTPrice(_url);
 
     // need to verify whether the nftPrice will have the latest value
     assets[nftAddress][nftId] = Asset(
       msg.sender,
       address(0),
       duration,
+      0,
       nftPrice,
       0
     );
@@ -161,29 +168,27 @@ contract Rentft is
    * here. If the borrower has consistently good renting track-record, they will get more
    * favourable quotes
    * @param _duration number of days that the user wishes to rent out the NFT for. 1 means 1 day
-   * @param _nft the address of the NFT that the user wishes to rent out
    * @return the total collateral + fee the borrower has to put up
    **/
-  function calculateCollateral(
-    uint256 _duration,
-    address _nft,
-    uint256 _tokenId
+  function calculateRent(
+    uint256 basePrice,
+    uint256 _duration
   ) public view returns (uint256) {
     // ! TODO: need to ensure that this nftPrice is relevant, and is not old
     // can we invoke chainlink price update here before computing the rentPrice?
     // collateral = _nft_price * ((collateralDailyFee) ** _duration)
     // collateral (with our service fee) = rentPrice * ourFee
     // ! this must always be populated, otherwise an error will be thrown
-    uint256 collateral = assets[_nft][_tokenId].nftPrice;
+    uint256 rent = basePrice;
 
     // * interest compounding
     for (uint256 i = 0; i < _duration; i++) {
-      collateral = (collateral).add(collateral.mul(collateralDailyFee).div(10000));
+      rent = (rent).add(rent.mul(collateralDailyFee).div(10000));
     }
 
     // this though returns price in ETH
     // we need an ability to convert it into whatever
-    return collateral;
+    return rent;
   }
 
   // to rent the contract:
@@ -193,37 +198,104 @@ contract Rentft is
   // (this check also ensures that the borrower is not the
   // owner & that the borrower isn't borrowing what he already borrowed)
   function rent(
-    address _owner,
     address _borrower,
     uint256 _duration,
     address _nft,
     uint256 _tokenId,
-    uint256 _collateralOffered,
-    address payable _currencyCollateralPaidIn
+    uint256 _collateralOffered
   ) external payable nonReentrant returns (bool) {
     require(assets[_nft][_tokenId].duration > 0, "could not find an NFT");
+    
+    address owner = assets[_nft][_tokenId].owner;
 
     // ! we only need DAI here to begin with
     // require(msg.value > 0, "you need to pay the collateral");
-    uint256 collateral = calculateCollateral(_duration, _nft, _tokenId);
+    uint256 collateral = calculateRent(assets[_nft][_tokenId].nftPrice, _duration);
     // since the value will be derived from the read function don't think we even need to take it as an input just make the read function public for the user
     require(collateral == _collateralOffered, "the collateral is too low");
 
-    // ? Is this going to fail? proxy isn't payable
     // ! will fail if the msg.sender hasn't approved us as the spender of their ERC20 tokens
-
     transferToProxy(
-      _currencyCollateralPaidIn,
+      daiAddress,
       msg.sender,
       _collateralOffered,
-      proxyInfo[_owner][_borrower]
+      proxyInfo[owner][_borrower]
     );
     // deposit to aave
-    InterestCalculatorProxy(proxyInfo[_owner][_borrower]).deposit(_currencyCollateralPaidIn,  address(lendingPool));
+    InterestCalculatorProxy(proxyInfo[owner][_borrower]).deposit(daiAddress, address(lendingPool));
+    
+    // set asset vars
+    assets[_nft][_tokenId].borrower = _borrower;
+    assets[_nft][_tokenId].borrowedAt = now;
+    assets[_nft][_tokenId].collateral = _collateralOffered;
+    
     // transfer nft to borrower
     ERC721(_nft).transferFrom(address(this), _borrower, _tokenId);
 
     return true;
+  }
+  
+  // called by borrower
+  // !! base url must be stored in contract, borrower might provide fake one here
+  function returnNFT(
+    address _nft,
+    uint256 _tokenId,
+    string calldata _url
+  ) external {
+      require(assets[_nft][_tokenId].duration > 0, "could not find an NFT");
+      require(assets[_nft][_tokenId].borrower == msg.sender, "Not Borrower");
+      // check (now-borrowedAt) <= duration in secs
+      uint256 durationInDays = now.sub(assets[_nft][_tokenId].borrowedAt).div(86400);
+      require(durationInDays <= assets[_nft][_tokenId].duration, "Duration exceeded");
+      
+      address owner = assets[_nft][_tokenId].owner;
+      uint256 collateralAvailable = assets[_nft][_tokenId].collateral;
+      
+      // redeem aDai to Dai in Proxy
+      uint256 daiReceived = InterestCalculatorProxy(proxyInfo[owner][msg.sender]).withdraw(aDaiAddress);
+      // calculate aave interest
+      uint256 interest = daiReceived.sub(collateralAvailable);
+      // split interest to both users
+      uint256 ownerPayout = interest.div(2);
+      uint256 borrowerPayout = interest.div(2);
+      
+      // get current nft price
+      fetchNFTPrice(_url);
+      require(nftPrice != 0, "Invalid NFT Price");
+      uint256 currNFTPrice = nftPrice;
+      
+      // calculate rent till now based on curr price
+      uint256 payableRent = calculateRent(currNFTPrice, durationInDays);
+      
+      // current price greater than initial price
+      if(payableRent > collateralAvailable) {
+          uint256 extra = payableRent.sub(collateralAvailable);
+          
+          // can compensate from borrower's share of interest
+          if(borrowerPayout >= extra) {
+              borrowerPayout = borrowerPayout.sub(extra);
+              ownerPayout = ownerPayout.add(extra);
+          } else {
+              // assign borrower's entire interest to owner
+              borrowerPayout = 0;
+              ownerPayout = ownerPayout.add(borrowerPayout);
+          }
+      } else {
+          // pay rent to owner, send remaining to borrower
+          ownerPayout.add(payableRent);
+          borrowerPayout.add(collateralAvailable.sub(payableRent));
+      }
+      
+      // send nft to owner
+      ERC721(_nft).transferFrom(msg.sender, owner, _tokenId);
+      
+      //send payout amounts to both
+      ERC20(daiAddress).safeTransfer(owner, ownerPayout);
+      ERC20(daiAddress).safeTransfer(msg.sender, borrowerPayout);
+      
+
+      // set assets params to null
+      assets[_nft][_tokenId].duration = 0;
   }
   
   /**
@@ -239,28 +311,12 @@ contract Rentft is
     uint256 _amount,
     address _proxy
   ) private {
-    if (_reserve != ethAddress) {
       require(
         msg.value == 0,
         "User is sending ETH along with the ERC20 transfer."
       );
       // ! our contract should be approved to move his ERC20 funds
       ERC20(_reserve).safeTransferFrom(_user, _proxy, _amount);
-    } else {
-      // * this is used for ETH. we don't need it for now
-      require(
-        msg.value >= _amount,
-        "The amount and the value sent to deposit do not match"
-      );
-
-      if (msg.value > _amount) {
-        //send back excess ETH
-        uint256 excessAmount = msg.value.sub(_amount);
-        //solium-disable-next-line
-        (bool result, ) = _user.call{value: excessAmount, gas: 50000}("");
-        require(result, "Transfer of ETH failed");
-      }
-    }
   }
 
   // create the proxy contract for managing interest when a borrower rents it out
@@ -286,8 +342,27 @@ contract Rentft is
   {
     return proxyInfo[_owner][_borrower];
   }
+  
+  function fetchNFTPrice(string memory _url) internal {
+      Chainlink.Request memory request = buildChainlinkRequest(
+      jobId,
+      address(this),
+      this.fulfill.selector
+    );
 
-  // ! can this actually be public? Wouldn't that mean that anyone can set the nftPrice with a correct requestId?
+    // Set the URL to perform the GET request on
+    request.add("get", _url);
+
+    // Set the path to find the desired data in the API response, where the response format is:
+    request.add("path", "last_sale.payment_token.usd_price");
+
+    // Multiply the result by 100 to remove decimals
+    request.addInt("times", 1000000000000000000);
+
+    // Sends the request
+    sendChainlinkRequestTo(oracle, request, chainlinkFee);
+  }
+
   /**
    * Receive the price response in the form of uint256
    */
