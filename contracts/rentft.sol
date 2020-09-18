@@ -5,13 +5,15 @@ import "@chainlink/contracts/src/v0.6/ChainlinkClient.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./utils/ProxyFactory.sol";
 import "./utils/OwnableUpgradeSafe.sol";
 import "./utils/ContextUpgradeSafe.sol";
 import "./utils/Initializable.sol";
-import "./utils/Helper.sol";
 import "./interfaces/ILendingPoolAddressProvider.sol";
 import "./interfaces/ILendingPoolCore.sol";
+import "./interfaces/ILendingPool.sol";
+
 
 interface AToken {
   /**
@@ -32,16 +34,7 @@ interface AToken {
   function balanceOf(address _user) external view returns (uint256);
 }
 
-// Aave Lending Pool Interface
-interface LendingPool {
-  function deposit(
-    address _reserve,
-    uint256 _amount,
-    uint16 _referralCode
-  ) external;
-}
-
-contract InterestCalculatorProxy is Helper, Initializable, OwnableUpgradeSafe {
+contract InterestCalculatorProxy is Initializable, OwnableUpgradeSafe {
   event Initialized(address indexed thisAddress);
 
   // proxy admin would be the owner to prevent in fraud cases where the borrower
@@ -51,17 +44,21 @@ contract InterestCalculatorProxy is Helper, Initializable, OwnableUpgradeSafe {
     OwnableUpgradeSafe.transferOwnership(_owner);
     emit Initialized(address(this));
   }
+  
+  function deposit(address _reserve, address _lendingPool) public {
+    uint reserveBalance = ERC20(_reserve).balanceOf(address(this));
+    ILendingPool(_lendingPool).deposit(_reserve, reserveBalance, 0);
+  }
 
-  function claimInterest() external view returns (uint256) {
+  function claimInterest(address _reserve) external view returns (uint256) {
     // All calculations to be done in the parent contract
-    return AToken(getADAI()).balanceOf(address(this));
+    return AToken(_reserve).balanceOf(address(this));
   }
 }
 
 contract Rentft is
   ProxyFactory,
   ChainlinkClient,
-  InterestCalculatorProxy,
   ReentrancyGuard
 {
   // using SafeMath for uint256;
@@ -95,8 +92,8 @@ contract Rentft is
   uint256 public collateralDailyFee = 100;
   address public ethAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
-  ILendingPoolAddressesProvider public addressesProvider;
-  ILendingPoolCore public core;
+  ILendingPoolAddressesProvider public lendingPoolAddressProvider;
+  ILendingPool public lendingPool;
 
   /**
    * Network: Kovan
@@ -108,14 +105,14 @@ contract Rentft is
   // provide aave address provider for the network you are working on
   // get all aave related addresses through addressesProvider state var
   // get all aToken reserve addresses through the core state var
-  constructor(address _aaveAdressesProvider) public {
+  constructor(ILendingPoolAddressesProvider _lendingPoolAddressProvider) public {
     setPublicChainlinkToken();
     oracle = 0x2f90A6D021db21e1B2A077c5a37B3C7E75D15b7e;
     jobId = "29fa9aa13bf1468788b7cc4a500a45b8";
     chainlinkFee = 0.1 * 10**18; // 0.1 LINK
-
-    addressesProvider = ILendingPoolAddressesProvider(_aaveAdressesProvider);
-    core = ILendingPoolCore(addressesProvider.getLendingPoolCore());
+    // do we need this at the moment  ?
+    lendingPoolAddressProvider =_lendingPoolAddressProvider;
+    lendingPool = ILendingPool(lendingPoolAddressProvider.getLendingPool());
   }
 
   // function to list the nft on the platform
@@ -243,16 +240,20 @@ contract Rentft is
     // ! we only need DAI here to begin with
     // require(msg.value > 0, "you need to pay the collateral");
     uint256 collateral = calculateCollateral(_duration, _nft, _tokenId);
-    require(collateral >= _collateralOffered, "the collateral is too low");
+    // since the value will be derived from the read function don't think we even need to take it as an input just make the read function public for the user
+    require(collateral == _collateralOffered, "the collateral is too low");
 
     // ? Is this going to fail? proxy isn't payable
     // ! will fail if the msg.sender hasn't approved us as the spender of their ERC20 tokens
+
     transferToProxy(
       _currencyCollateralPaidIn,
       msg.sender,
       _collateralOffered,
       proxyInfo[_owner][_borrower]
     );
+    InterestCalculatorProxy(proxyInfo[_owner][_borrower]).deposit(_currencyCollateralPaidIn,  address(lendingPool));
+    ERC721(_nft).transferFrom(_owner, _borrower, _tokenId);
 
     return true;
   }
