@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.0;
 
-import "@chainlink/contracts/src/v0.6/ChainlinkClient.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "../node_modules/@chainlink/contracts/src/v0.6/ChainlinkClient.sol";
+import "../node_modules/@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./utils/ProxyFactory.sol";
 import "./utils/OwnableUpgradeSafe.sol";
 import "./utils/ContextUpgradeSafe.sol";
@@ -150,6 +150,9 @@ contract Rentft is
       nftPrice,
       0
     );
+    
+    // transfer nft to this contract
+    ERC721(nftAddress).transferFrom(msg.sender, address(this), nftId);
   }
 
   /**
@@ -181,43 +184,6 @@ contract Rentft is
     // this though returns price in ETH
     // we need an ability to convert it into whatever
     return collateral;
-  }
-
-  /**
-   * @dev transfers an amount from a user to the destination proxy address where it
-   * subsequently gets deposited into Aave
-   * @param _reserve the address of the reserve where the amount is being transferred
-   * @param _user the address of the user from where the transfer is happening
-   * @param _amount the amount being transferred
-   **/
-  function transferToProxy(
-    address _reserve,
-    address payable _user,
-    uint256 _amount,
-    address _proxy
-  ) private {
-    if (_reserve != ethAddress) {
-      require(
-        msg.value == 0,
-        "User is sending ETH along with the ERC20 transfer."
-      );
-      // ! our contract should be approved to move his ERC20 funds
-      ERC20(_reserve).safeTransferFrom(address(this), _proxy, _amount);
-    } else {
-      // * this is used for ETH. we don't need it for now
-      require(
-        msg.value >= _amount,
-        "The amount and the value sent to deposit do not match"
-      );
-
-      if (msg.value > _amount) {
-        //send back excess ETH
-        uint256 excessAmount = msg.value.sub(_amount);
-        //solium-disable-next-line
-        (bool result, ) = _user.call{value: excessAmount, gas: 50000}("");
-        require(result, "Transfer of ETH failed");
-      }
-    }
   }
 
   // to rent the contract:
@@ -252,10 +218,49 @@ contract Rentft is
       _collateralOffered,
       proxyInfo[_owner][_borrower]
     );
+    // deposit to aave
     InterestCalculatorProxy(proxyInfo[_owner][_borrower]).deposit(_currencyCollateralPaidIn,  address(lendingPool));
-    ERC721(_nft).transferFrom(_owner, _borrower, _tokenId);
+    // transfer nft to borrower
+    ERC721(_nft).transferFrom(address(this), _borrower, _tokenId);
 
     return true;
+  }
+  
+  /**
+   * @dev transfers an amount from a user to the destination proxy address where it
+   * subsequently gets deposited into Aave
+   * @param _reserve the address of the reserve where the amount is being transferred
+   * @param _user the address of the user from where the transfer is happening
+   * @param _amount the amount being transferred
+   **/
+  function transferToProxy(
+    address _reserve,
+    address payable _user,
+    uint256 _amount,
+    address _proxy
+  ) private {
+    if (_reserve != ethAddress) {
+      require(
+        msg.value == 0,
+        "User is sending ETH along with the ERC20 transfer."
+      );
+      // ! our contract should be approved to move his ERC20 funds
+      ERC20(_reserve).safeTransferFrom(_user, _proxy, _amount);
+    } else {
+      // * this is used for ETH. we don't need it for now
+      require(
+        msg.value >= _amount,
+        "The amount and the value sent to deposit do not match"
+      );
+
+      if (msg.value > _amount) {
+        //send back excess ETH
+        uint256 excessAmount = msg.value.sub(_amount);
+        //solium-disable-next-line
+        (bool result, ) = _user.call{value: excessAmount, gas: 50000}("");
+        require(result, "Transfer of ETH failed");
+      }
+    }
   }
 
   // create the proxy contract for managing interest when a borrower rents it out
