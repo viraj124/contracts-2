@@ -178,12 +178,14 @@ contract Rentft is
     address _borrower,
     uint256 _duration,
     address _nft,
-    uint256 _tokenId
+    uint256 _tokenId,
+    string calldata _url
     ) external nonReentrant {
     require(assets[_nft][_tokenId].duration > 0, "could not find an NFT");
     
     address owner = assets[_nft][_tokenId].owner;
-
+    fetchNFTPrice(_url);
+    assets[_nft][_tokenId].nftPrice = nftPrice;
     // ! we only need DAI here to begin with
     // require(msg.value > 0, "you need to pay the collateral");
     uint256 collateral = calculateCollateral(assets[_nft][_tokenId].nftPrice, _duration);
