@@ -141,7 +141,7 @@ contract Rentft is
     );
     
     // transfer nft to this contract
-    // ERC721(nftAddress).transferFrom(msg.sender, address(this), nftId);
+    ERC721(nftAddress).transferFrom(msg.sender, address(this), nftId);
   }
 
    /**

@@ -9,6 +9,6 @@ interface AToken {
    * @return the total balance of the user
    **/
   function balanceOf(address _user) external view returns (uint256);
-  
+
   function redeem(uint256 _amount) external;
 }
