@@ -3895,7 +3895,8 @@ contract Rentft is
    * @return the total collateral + fee the borrower has to put up
    **/
   function calculateCollateral(
-    uint256 basePrice,
+    address _nft,
+    uint256 _tokenId,
     uint256 _duration
   ) public view returns (uint256) {
     // ! TODO: need to ensure that this nftPrice is relevant, and is not old
@@ -3904,6 +3905,7 @@ contract Rentft is
     // collateral (with our service fee) = rentPrice * ourFee
     // ! this must always be populated, otherwise an error will be thrown
     // * interest compounding
+    uint256 basePrice = assets[_nft][_tokenId].nftPrice;
     uint256 collateral = ((basePrice).add(basePrice.mul(collateralDailyFee).div(10000))).mul(_duration);
     // this though returns price in ETH
     // we need an ability to convert it into whatever
@@ -3930,7 +3932,7 @@ contract Rentft is
     assets[_nft][_tokenId].nftPrice = nftPrice;
     // ! we only need DAI here to begin with
     // require(msg.value > 0, "you need to pay the collateral");
-    uint256 collateral = calculateCollateral(assets[_nft][_tokenId].nftPrice, _duration);
+    uint256 collateral = calculateCollateral(_nft, _tokenId, _duration);
 
     // ! will fail if the msg.sender hasn't approved us as the spender of their ERC20 tokens
     transferToProxy(
@@ -3980,10 +3982,10 @@ contract Rentft is
       // get current nft price
       fetchNFTPrice(_url);
       require(nftPrice != 0, "Invalid NFT Price");
-      
+      assets[_nft][_tokenId].nftPrice = nftPrice;
       // calculate latest collateral
       // note => the price here is the latest price removed the current price var due to stack deep error
-      uint256 latestCollateralAmount = calculateCollateral(nftPrice, durationInDays);
+      uint256 latestCollateralAmount = calculateCollateral(_nft, _tokenId, durationInDays);
       // rent calculation based on latest price
       uint256 calculatedRent = nftPrice.mul(collateralDailyFee).div(10000).mul(durationInDays);
       if (latestCollateralAmount > collateralAvailable) {
