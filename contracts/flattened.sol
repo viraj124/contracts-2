@@ -3818,6 +3818,7 @@ contract Rentft is
   // proxy details
   // owner => borrower => proxy
   mapping(address => mapping(address => address)) public proxyInfo;
+  address public proxyBaseAddress;
 
   // nft address => token id => asset info struct
   mapping(address => mapping(uint256 => Asset)) public assets;
@@ -3838,6 +3839,9 @@ contract Rentft is
   ILendingPoolAddressesProvider public lendingPoolAddressProvider;
   ILendingPool public lendingPool;
   ILendingPoolCore public lendingPoolCore;
+  
+  address tempNftAddress;
+  uint256 tempNftId;
 
   /**
    * Network: Kovan
@@ -3849,13 +3853,14 @@ contract Rentft is
   // provide aave address provider for the network you are working on
   // get all aave related addresses through addressesProvider state var
   // get all aToken reserve addresses through the core state var
-  constructor(ILendingPoolAddressesProvider _lendingPoolAddressProvider) public {
+  constructor(address _proxyBaseAddress) public {
     setPublicChainlinkToken();
     oracle = 0x2f90A6D021db21e1B2A077c5a37B3C7E75D15b7e;
     jobId = "29fa9aa13bf1468788b7cc4a500a45b8";
     chainlinkFee = 0.1 * 10**18; // 0.1 LINK
+    proxyBaseAddress = _proxyBaseAddress;
     // do we need this at the moment  ?
-    lendingPoolAddressProvider =_lendingPoolAddressProvider;
+    lendingPoolAddressProvider =ILendingPoolAddressesProvider(0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5);
     lendingPool = ILendingPool(lendingPoolAddressProvider.getLendingPool());
     lendingPoolCore = ILendingPoolCore(lendingPoolAddressProvider.getLendingPoolCore());
   }
@@ -3870,6 +3875,8 @@ contract Rentft is
   ) external {
     require(nftAddress != address(0), "Invalid NFT Address");
     
+    tempNftAddress = nftAddress;
+    tempNftId = nftId;
     fetchNFTPrice(_url);
 
     // need to verify whether the nftPrice will have the latest value
@@ -3878,7 +3885,7 @@ contract Rentft is
       address(0),
       duration,
       0,
-      nftPrice,
+      0, // price not yet fetched
       0
     );
     
@@ -3924,16 +3931,23 @@ contract Rentft is
     address _nft,
     uint256 _tokenId,
     string calldata _url
-    ) external nonReentrant {
+  ) external nonReentrant {
     require(assets[_nft][_tokenId].duration > 0, "could not find an NFT");
     
     address owner = assets[_nft][_tokenId].owner;
+    
+    tempNftAddress = _nft;
+    tempNftId = _tokenId;
     fetchNFTPrice(_url);
-    assets[_nft][_tokenId].nftPrice = nftPrice;
+
     // ! we only need DAI here to begin with
     // require(msg.value > 0, "you need to pay the collateral");
+    // !! need to fix this calculation as the nft price value is older one here
     uint256 collateral = calculateCollateral(_nft, _tokenId, _duration);
-
+    
+    // create proxy
+    createProxy(owner, _borrower);
+    
     // ! will fail if the msg.sender hasn't approved us as the spender of their ERC20 tokens
     transferToProxy(
       daiAddress,
@@ -4040,7 +4054,7 @@ contract Rentft is
     // Deploy proxy
     // for testing the address of the proxy contract which will
     // be used to redirect interest will come here
-    address _intermediate = deployMinimal(oracle, _payload);
+    address _intermediate = deployMinimal(proxyBaseAddress, _payload);
     // user address is just recorded for tracking the proxy for the particular pair
     // TODO: need to test this for same owner but different user
     proxyInfo[_owner][_borrower] = _intermediate;
@@ -4068,7 +4082,7 @@ contract Rentft is
     // Set the path to find the desired data in the API response, where the response format is:
     request.add("path", "last_sale.payment_token.usd_price");
 
-    // Multiply the result by 100 to remove decimals
+    // Multiply the result by 10^18 to remove decimals
     request.addInt("times", 1000000000000000000);
 
     // Sends the request
@@ -4082,6 +4096,6 @@ contract Rentft is
     public
     recordChainlinkFulfillment(_requestId)
   {
-    nftPrice = _price;
+    assets[tempNftAddress][tempNftId].nftPrice = _price;
   }
 }
