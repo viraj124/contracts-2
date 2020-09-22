@@ -3761,14 +3761,12 @@ pragma solidity ^0.6.0;
 contract InterestCalculatorProxy is Initializable, OwnableUpgradeSafe {
   using  SafeERC20 for ERC20;
   event Initialized(address indexed thisAddress);
-  address public rentft;
-
+ 
   // proxy admin would be the owner to prevent in fraud cases where the borrower
   // doesn't return the nft back
-  function initialize(address _owner, address _rentft) public initializer {
+  function initialize(address _owner) public initializer {
     OwnableUpgradeSafe.__Ownable_init();
     OwnableUpgradeSafe.transferOwnership(_owner);
-    rentft = _rentft;
     emit Initialized(address(this));
   }
   
