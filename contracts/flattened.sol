@@ -3761,7 +3761,8 @@ pragma solidity ^0.6.0;
 contract InterestCalculatorProxy is Initializable, OwnableUpgradeSafe {
   using  SafeERC20 for ERC20;
   event Initialized(address indexed thisAddress);
- 
+  address rentft;
+
   // proxy admin would be the owner to prevent in fraud cases where the borrower
   // doesn't return the nft back
   function initialize(address _owner) public initializer {
@@ -3770,7 +3771,8 @@ contract InterestCalculatorProxy is Initializable, OwnableUpgradeSafe {
     emit Initialized(address(this));
   }
   
-  function deposit(address _reserve, address _lendingPool, address _lendingPoolCore) public {
+  function deposit(address _reserve, address _lendingPool, address _lendingPoolCore, address _rentft) public {
+    rentft = _rentft;
     uint reserveBalance = ERC20(_reserve).balanceOf(address(this));
     ERC20(_reserve).approve(_lendingPoolCore, reserveBalance);
     ILendingPool(_lendingPool).deposit(_reserve, reserveBalance, 0);
@@ -3803,6 +3805,12 @@ contract Rentft is
 {
   // using SafeMath for uint256;
   using SafeERC20 for ERC20;
+  
+  event ProductAdded(address nftAddress, uint256 nftId, address owner, uint256 duration);
+  event Rent(address nftAddress, uint256 nftId, address borrower, address owner, uint256 borrowedAt);
+  event Return(address nftAddress, uint256 nftId, address borrower, address owner, uint256 borrowerPayout, uint256 ownerPayout);
+
+
 
   struct Asset {
     address owner;
@@ -3889,6 +3897,7 @@ contract Rentft is
     
     // transfer nft to this contract
     ERC721(nftAddress).transferFrom(msg.sender, address(this), nftId);
+    emit ProductAdded(nftAddress, nftId, msg.sender, duration);
   }
 
    /**
@@ -3930,6 +3939,7 @@ contract Rentft is
     uint256 _tokenId,
     string calldata _url
   ) external nonReentrant {
+    require(msg.sender != assets[_nft][_tokenId].owner, "Owner cannot rent his own NFT");
     require(assets[_nft][_tokenId].duration > 0, "could not find an NFT");
     
     address owner = assets[_nft][_tokenId].owner;
@@ -3954,7 +3964,7 @@ contract Rentft is
       proxyInfo[owner][_borrower]
     );
     // deposit to aave
-    InterestCalculatorProxy(proxyInfo[owner][_borrower]).deposit(daiAddress, address(lendingPool), address(lendingPoolCore));
+    InterestCalculatorProxy(proxyInfo[owner][_borrower]).deposit(daiAddress, address(lendingPool), address(lendingPoolCore), address(this));
     
     // set asset vars
     assets[_nft][_tokenId].borrower = _borrower;
@@ -3963,6 +3973,8 @@ contract Rentft is
     
     // transfer nft to borrower
     ERC721(_nft).transferFrom(address(this), _borrower, _tokenId);
+    emit Rent(_nft, _tokenId, msg.sender, assets[_nft][_tokenId].owner, assets[_nft][_tokenId].borrowedAt);
+    
   }
   
   // called by borrower
@@ -4020,6 +4032,7 @@ contract Rentft is
 
       // set assets params to null
       assets[_nft][_tokenId].duration = 0;
+      emit Return(_nft, _tokenId, msg.sender, owner, borrowerPayout, ownerPayout);
   }
   
   /**
