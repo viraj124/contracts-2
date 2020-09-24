@@ -1032,7 +1032,6 @@ contract ReentrancyGuard {
 
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -1113,7 +1112,6 @@ interface IERC20 {
 
 // File: @openzeppelin/contracts/utils/Address.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.2;
 
@@ -1257,7 +1255,6 @@ library Address {
 
 // File: @openzeppelin/contracts/token/ERC20/SafeERC20.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -1361,7 +1358,6 @@ abstract contract Context {
 
 // File: @openzeppelin/contracts/token/ERC20/ERC20.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -1670,7 +1666,6 @@ contract ERC20 is Context, IERC20 {
 
 // File: @openzeppelin/contracts/introspection/IERC165.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -3804,9 +3799,9 @@ contract Rentft is
   // using SafeMath for uint256;
   using SafeERC20 for ERC20;
   
-  event ProductAdded(address nftAddress, uint256 nftId, address owner, uint256 duration);
-  event Rent(address nftAddress, uint256 nftId, address borrower, address owner, uint256 borrowedAt);
-  event Return(address nftAddress, uint256 nftId, address borrower, address owner, uint256 borrowerPayout, uint256 ownerPayout);
+  event ProductAdded(address indexed nftAddress, uint256 indexed nftId, address indexed owner, uint256 duration, uint256 price);
+  event Rent(address indexed nftAddress, uint256 indexed nftId, address indexed borrower, address owner, uint256 borrowedAt, uint256 price, uint256 collateral);
+  event Return(address indexed nftAddress, uint256 indexed nftId, address borrower, address owner);
 
 
 
@@ -3895,7 +3890,7 @@ contract Rentft is
     
     // transfer nft to this contract
     ERC721(nftAddress).transferFrom(msg.sender, address(this), nftId);
-    emit ProductAdded(nftAddress, nftId, msg.sender, duration);
+    emit ProductAdded(nftAddress, nftId, msg.sender, duration, nftPrice);
   }
 
    /**
@@ -3930,21 +3925,16 @@ contract Rentft is
   // 1. the borrower can't be borrowing the borrowed nft
   // (this check also ensures that the borrower is not the
   // owner & that the borrower isn't borrowing what he already borrowed)
+  // fetch price needs to be called since chainlink price won't be updated async
   function rent(
     address _borrower,
     uint256 _duration,
     address _nft,
-    uint256 _tokenId,
-    string calldata _url
-  ) external nonReentrant {
+    uint256 _tokenId) external nonReentrant {
     require(msg.sender != assets[_nft][_tokenId].owner, "Owner cannot rent his own NFT");
     require(assets[_nft][_tokenId].duration > 0, "could not find an NFT");
     
     address owner = assets[_nft][_tokenId].owner;
-    
-    tempNftAddress = _nft;
-    tempNftId = _tokenId;
-    fetchNFTPrice(_url);
 
     // ! we only need DAI here to begin with
     // require(msg.value > 0, "you need to pay the collateral");
@@ -3971,14 +3961,12 @@ contract Rentft is
     
     // transfer nft to borrower
     ERC721(_nft).transferFrom(address(this), _borrower, _tokenId);
-    emit Rent(_nft, _tokenId, msg.sender, assets[_nft][_tokenId].owner, assets[_nft][_tokenId].borrowedAt);
+    emit Rent(_nft, _tokenId, msg.sender, assets[_nft][_tokenId].owner, assets[_nft][_tokenId].borrowedAt, assets[_nft][_tokenId].nftPrice, collateral);
     
   }
   
   // called by borrower
-  // !! base url must be stored in contract, borrower might provide fake one here
-  // user won't provide the usrl since it has dynamic parameters we wouuld be constructing it on the js end
-  // NOTE -> there won't be a case where the borrower will recieve 0 as the amount it has to be collateral deposited - current price and interest calculations on top of that
+  // fetch price needs to be called since chainlink price won't be updated async
   function returnNFT(
     address _nft,
     uint256 _tokenId
@@ -4035,7 +4023,7 @@ contract Rentft is
 
       // set assets params to null
       assets[_nft][_tokenId].duration = 0;
-      emit Return(_nft, _tokenId, msg.sender, owner, borrowerPayout, ownerPayout);
+      emit Return(_nft, _tokenId, msg.sender, owner);
   }
   
   // Allow owner to withdraw collateral
@@ -4123,12 +4111,12 @@ contract Rentft is
     // Sends the request
     sendChainlinkRequestTo(oracle, request, chainlinkFee);
   }
-  
-    function fetchNFTPriceBeforeReturn(string calldata _url) external {
+  // to be called before rent and return functions
+  function fetchNFTPriceBeforeReturn(string calldata _url) external {
       Chainlink.Request memory request = buildChainlinkRequest(
       jobId,
       address(this),
-      this.fulfill2.selector
+      this.fulfillExternal.selector
     );
 
     // Set the URL to perform the GET request on
@@ -4154,7 +4142,7 @@ contract Rentft is
     assets[tempNftAddress][tempNftId].nftPrice = _price;
   }
   
-  function fulfill2(bytes32 _requestId, uint256 _price)
+  function fulfillExternal(bytes32 _requestId, uint256 _price)
     public
     recordChainlinkFulfillment(_requestId)
   {
