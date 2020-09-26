@@ -1,0 +1,633 @@
+{
+  "contractName": "Helper",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "getLendingPool",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "lendingpool",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getADAI",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "adai",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.6.12+commit.27d51765\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"getADAI\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"adai\",\"type\":\"address\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getLendingPool\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"lendingpool\",\"type\":\"address\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"getADAI()\":{\"details\":\"get adai kovan address\"},\"getLendingPool()\":{\"details\":\"get Lending Pool kovan address\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"/Users/shredder/git/renft-contracts/contracts/utils/Helper.sol\":\"Helper\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/shredder/git/renft-contracts/contracts/utils/Helper.sol\":{\"keccak256\":\"0xa9694de4b504a79fd357a1be5d7318cad17948ada4c07043f22b6b0a2ae3f9cc\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://489ce2bf12541fe929b480e98f2bf2ae138e125e7688ad9c9c21ff7f6c9807ee\",\"dweb:/ipfs/QmSz5aZBQEW8TV3TUwLtoNcqg9J5b2VtJueFm6YEKNg4dC\"]}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b50610109806100206000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c80630261bf8b146037578063987acb85146069575b600080fd5b603d609b565b604051808273ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b606f60b7565b604051808273ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b600073580d4fdc4bf8f9b5ae2fb9225d584fed4ad5375c905090565b60007358ad4cb396411b691a9aab6f74545b2c5217fe6a90509056fea26469706673582212202a5f667f457be0f99167b2ae5e5ab13993d9d057c15846ea87d1186007e391e564736f6c634300060c0033",
+  "deployedBytecode": "0x6080604052348015600f57600080fd5b506004361060325760003560e01c80630261bf8b146037578063987acb85146069575b600080fd5b603d609b565b604051808273ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b606f60b7565b604051808273ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b600073580d4fdc4bf8f9b5ae2fb9225d584fed4ad5375c905090565b60007358ad4cb396411b691a9aab6f74545b2c5217fe6a90509056fea26469706673582212202a5f667f457be0f99167b2ae5e5ab13993d9d057c15846ea87d1186007e391e564736f6c634300060c0033",
+  "immutableReferences": {},
+  "sourceMap": "57:373:6:-:0;;;;;;;;;;;;;;;;;;;",
+  "deployedSourceMap": "57:373:6:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;130:135;;;:::i;:::-;;;;;;;;;;;;;;;;;;;;;314:114;;;:::i;:::-;;;;;;;;;;;;;;;;;;;;;130:135;177:19;218:42;204:56;;130:135;:::o;314:114::-;354:12;381:42;374:49;;314:114;:::o",
+  "source": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.0;\n\ncontract Helper {\n  /**\n   * @dev get Lending Pool kovan address\n   */\n  function getLendingPool() public pure returns (address lendingpool) {\n    lendingpool = 0x580D4Fdc4BF8f9b5ae2fb9225D584fED4AD5375c;\n  }\n\n  /**\n   * @dev get adai kovan address\n   */\n  function getADAI() public pure returns (address adai) {\n    adai = 0x58AD4cB396411B691A9AAb6F74545b2C5217FE6a;\n  }\n}\n",
+  "sourcePath": "/Users/shredder/git/renft-contracts/contracts/utils/Helper.sol",
+  "ast": {
+    "absolutePath": "/Users/shredder/git/renft-contracts/contracts/utils/Helper.sol",
+    "exportedSymbols": {
+      "Helper": [
+        876
+      ]
+    },
+    "id": 877,
+    "license": "MIT",
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 853,
+        "literals": [
+          "solidity",
+          "^",
+          "0.6",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "32:23:6"
+      },
+      {
+        "abstract": false,
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 876,
+        "linearizedBaseContracts": [
+          876
+        ],
+        "name": "Helper",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": {
+              "id": 863,
+              "nodeType": "Block",
+              "src": "198:67:6",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 861,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 859,
+                      "name": "lendingpool",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 857,
+                      "src": "204:11:6",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "hexValue": "307835383044344664633442463866396235616532666239323235443538346645443441443533373563",
+                      "id": 860,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "number",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "218:42:6",
+                      "subdenomination": null,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address_payable",
+                        "typeString": "address payable"
+                      },
+                      "value": "0x580D4Fdc4BF8f9b5ae2fb9225D584fED4AD5375c"
+                    },
+                    "src": "204:56:6",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 862,
+                  "nodeType": "ExpressionStatement",
+                  "src": "204:56:6"
+                }
+              ]
+            },
+            "documentation": {
+              "id": 854,
+              "nodeType": "StructuredDocumentation",
+              "src": "77:50:6",
+              "text": " @dev get Lending Pool kovan address"
+            },
+            "functionSelector": "0261bf8b",
+            "id": 864,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getLendingPool",
+            "nodeType": "FunctionDefinition",
+            "overrides": null,
+            "parameters": {
+              "id": 855,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "153:2:6"
+            },
+            "returnParameters": {
+              "id": 858,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 857,
+                  "mutability": "mutable",
+                  "name": "lendingpool",
+                  "nodeType": "VariableDeclaration",
+                  "overrides": null,
+                  "scope": 864,
+                  "src": "177:19:6",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 856,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "177:7:6",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "176:21:6"
+            },
+            "scope": 876,
+            "src": "130:135:6",
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 874,
+              "nodeType": "Block",
+              "src": "368:60:6",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 872,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 870,
+                      "name": "adai",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 868,
+                      "src": "374:4:6",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "hexValue": "307835384144346342333936343131423639314139414162364637343534356232433532313746453661",
+                      "id": 871,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "number",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "381:42:6",
+                      "subdenomination": null,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address_payable",
+                        "typeString": "address payable"
+                      },
+                      "value": "0x58AD4cB396411B691A9AAb6F74545b2C5217FE6a"
+                    },
+                    "src": "374:49:6",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 873,
+                  "nodeType": "ExpressionStatement",
+                  "src": "374:49:6"
+                }
+              ]
+            },
+            "documentation": {
+              "id": 865,
+              "nodeType": "StructuredDocumentation",
+              "src": "269:42:6",
+              "text": " @dev get adai kovan address"
+            },
+            "functionSelector": "987acb85",
+            "id": 875,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getADAI",
+            "nodeType": "FunctionDefinition",
+            "overrides": null,
+            "parameters": {
+              "id": 866,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "330:2:6"
+            },
+            "returnParameters": {
+              "id": 869,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 868,
+                  "mutability": "mutable",
+                  "name": "adai",
+                  "nodeType": "VariableDeclaration",
+                  "overrides": null,
+                  "scope": 875,
+                  "src": "354:12:6",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 867,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "354:7:6",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "353:14:6"
+            },
+            "scope": 876,
+            "src": "314:114:6",
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "public"
+          }
+        ],
+        "scope": 877,
+        "src": "57:373:6"
+      }
+    ],
+    "src": "32:399:6"
+  },
+  "legacyAST": {
+    "absolutePath": "/Users/shredder/git/renft-contracts/contracts/utils/Helper.sol",
+    "exportedSymbols": {
+      "Helper": [
+        876
+      ]
+    },
+    "id": 877,
+    "license": "MIT",
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 853,
+        "literals": [
+          "solidity",
+          "^",
+          "0.6",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "32:23:6"
+      },
+      {
+        "abstract": false,
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 876,
+        "linearizedBaseContracts": [
+          876
+        ],
+        "name": "Helper",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": {
+              "id": 863,
+              "nodeType": "Block",
+              "src": "198:67:6",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 861,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 859,
+                      "name": "lendingpool",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 857,
+                      "src": "204:11:6",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "hexValue": "307835383044344664633442463866396235616532666239323235443538346645443441443533373563",
+                      "id": 860,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "number",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "218:42:6",
+                      "subdenomination": null,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address_payable",
+                        "typeString": "address payable"
+                      },
+                      "value": "0x580D4Fdc4BF8f9b5ae2fb9225D584fED4AD5375c"
+                    },
+                    "src": "204:56:6",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 862,
+                  "nodeType": "ExpressionStatement",
+                  "src": "204:56:6"
+                }
+              ]
+            },
+            "documentation": {
+              "id": 854,
+              "nodeType": "StructuredDocumentation",
+              "src": "77:50:6",
+              "text": " @dev get Lending Pool kovan address"
+            },
+            "functionSelector": "0261bf8b",
+            "id": 864,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getLendingPool",
+            "nodeType": "FunctionDefinition",
+            "overrides": null,
+            "parameters": {
+              "id": 855,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "153:2:6"
+            },
+            "returnParameters": {
+              "id": 858,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 857,
+                  "mutability": "mutable",
+                  "name": "lendingpool",
+                  "nodeType": "VariableDeclaration",
+                  "overrides": null,
+                  "scope": 864,
+                  "src": "177:19:6",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 856,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "177:7:6",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "176:21:6"
+            },
+            "scope": 876,
+            "src": "130:135:6",
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 874,
+              "nodeType": "Block",
+              "src": "368:60:6",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 872,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 870,
+                      "name": "adai",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 868,
+                      "src": "374:4:6",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "hexValue": "307835384144346342333936343131423639314139414162364637343534356232433532313746453661",
+                      "id": 871,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "number",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "381:42:6",
+                      "subdenomination": null,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address_payable",
+                        "typeString": "address payable"
+                      },
+                      "value": "0x58AD4cB396411B691A9AAb6F74545b2C5217FE6a"
+                    },
+                    "src": "374:49:6",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 873,
+                  "nodeType": "ExpressionStatement",
+                  "src": "374:49:6"
+                }
+              ]
+            },
+            "documentation": {
+              "id": 865,
+              "nodeType": "StructuredDocumentation",
+              "src": "269:42:6",
+              "text": " @dev get adai kovan address"
+            },
+            "functionSelector": "987acb85",
+            "id": 875,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getADAI",
+            "nodeType": "FunctionDefinition",
+            "overrides": null,
+            "parameters": {
+              "id": 866,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "330:2:6"
+            },
+            "returnParameters": {
+              "id": 869,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 868,
+                  "mutability": "mutable",
+                  "name": "adai",
+                  "nodeType": "VariableDeclaration",
+                  "overrides": null,
+                  "scope": 875,
+                  "src": "354:12:6",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 867,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "354:7:6",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "353:14:6"
+            },
+            "scope": 876,
+            "src": "314:114:6",
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "public"
+          }
+        ],
+        "scope": 877,
+        "src": "57:373:6"
+      }
+    ],
+    "src": "32:399:6"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.6.12+commit.27d51765.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.2.5",
+  "updatedAt": "2020-09-16T15:51:20.463Z",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "getADAI()": {
+        "details": "get adai kovan address"
+      },
+      "getLendingPool()": {
+        "details": "get Lending Pool kovan address"
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  }
+}
