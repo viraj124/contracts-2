@@ -23,7 +23,7 @@ Ensure you have all the env variables defined from truffle-config.js. These are:
 Now run
 
 ```bash
-truffle console --network
+truffle console --network kovan
 ```
 
 ```bash
