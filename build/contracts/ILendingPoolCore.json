@@ -21,7 +21,7 @@
       "type": "function"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.6.12+commit.27d51765\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_reserve\",\"type\":\"address\"}],\"name\":\"getReserveATokenAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"/Users/shredder/git/renft/renft-contracts/contracts/interfaces/ILendingPoolCore.sol\":\"ILendingPoolCore\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/shredder/git/renft/renft-contracts/contracts/interfaces/ILendingPoolCore.sol\":{\"keccak256\":\"0x8f34a1abe95a5c6023d957b916059b2b0ab32d89074f5793c72c3c253a4bb0bf\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://740a1a380a74c011e7bd36b2dae10eb4eab96d6c2dba47b8167f5f276c731970\",\"dweb:/ipfs/QmbY5qEeTqKDaW7gR58DoQsmFMsrgpk7CH9ZibjyQYr95H\"]},\"/Users/shredder/git/renft/renft-contracts/contracts/libraries/CoreLibrary.sol\":{\"keccak256\":\"0xd3d337215c1b3b54960240c57bceef43fe47b6cba77f66f51224a0c9a32e9b68\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6305d72436ec38bc8fd05eb37b3126409ade74c9ed41ea67b0015971b7aa8ef1\",\"dweb:/ipfs/QmZJT7rYCAAYAop3j3YfRT8zpnUiRYgSYDHdGXR85WSCVf\"]}},\"version\":1}",
+  "metadata": "{\"compiler\":{\"version\":\"0.6.12+commit.27d51765\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_reserve\",\"type\":\"address\"}],\"name\":\"getReserveATokenAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"/Users/shredder/git/renft/renft-contracts/contracts/interfaces/ILendingPoolCore.sol\":\"ILendingPoolCore\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/shredder/git/renft/renft-contracts/contracts/interfaces/ILendingPoolCore.sol\":{\"keccak256\":\"0x8f34a1abe95a5c6023d957b916059b2b0ab32d89074f5793c72c3c253a4bb0bf\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://740a1a380a74c011e7bd36b2dae10eb4eab96d6c2dba47b8167f5f276c731970\",\"dweb:/ipfs/QmbY5qEeTqKDaW7gR58DoQsmFMsrgpk7CH9ZibjyQYr95H\"]},\"/Users/shredder/git/renft/renft-contracts/contracts/libraries/CoreLibrary.sol\":{\"keccak256\":\"0x467bef1e00ccf41e9016a894c8706d4500bc065c9609510787a3a0252bead506\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://5f09ef80f1de7f5693fd07dcc0fa7e364cb82ec0a835a21add4859dbdabf0ba8\",\"dweb:/ipfs/QmaKjqf7YMHo6CsfYft7aGbrCQYhpy4YWyR8soozU1zcBG\"]}},\"version\":1}",
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "immutableReferences": {},
@@ -33,15 +33,15 @@
     "absolutePath": "/Users/shredder/git/renft/renft-contracts/contracts/interfaces/ILendingPoolCore.sol",
     "exportedSymbols": {
       "ILendingPoolCore": [
-        6893
+        919
       ]
     },
-    "id": 6894,
+    "id": 920,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 6884,
+        "id": 910,
         "literals": [
           "solidity",
           "^",
@@ -49,16 +49,16 @@
           ".0"
         ],
         "nodeType": "PragmaDirective",
-        "src": "32:23:6"
+        "src": "32:23:5"
       },
       {
         "absolutePath": "/Users/shredder/git/renft/renft-contracts/contracts/libraries/CoreLibrary.sol",
         "file": "../libraries/CoreLibrary.sol",
-        "id": 6885,
+        "id": 911,
         "nodeType": "ImportDirective",
-        "scope": 6894,
-        "sourceUnit": 6962,
-        "src": "57:38:6",
+        "scope": 920,
+        "sourceUnit": 985,
+        "src": "57:38:5",
         "symbolAliases": [],
         "unitAlias": ""
       },
@@ -69,9 +69,9 @@
         "contractKind": "interface",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 6893,
+        "id": 919,
         "linearizedBaseContracts": [
-          6893
+          919
         ],
         "name": "ILendingPoolCore",
         "nodeType": "ContractDefinition",
@@ -80,7 +80,7 @@
             "body": null,
             "documentation": null,
             "functionSelector": "34b3beee",
-            "id": 6892,
+            "id": 918,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
@@ -88,18 +88,18 @@
             "nodeType": "FunctionDefinition",
             "overrides": null,
             "parameters": {
-              "id": 6888,
+              "id": 914,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 6887,
+                  "id": 913,
                   "mutability": "mutable",
                   "name": "_reserve",
                   "nodeType": "VariableDeclaration",
                   "overrides": null,
-                  "scope": 6892,
-                  "src": "161:16:6",
+                  "scope": 918,
+                  "src": "161:16:5",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -107,10 +107,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 6886,
+                    "id": 912,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "161:7:6",
+                    "src": "161:7:5",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -121,21 +121,21 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "160:18:6"
+              "src": "160:18:5"
             },
             "returnParameters": {
-              "id": 6891,
+              "id": 917,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 6890,
+                  "id": 916,
                   "mutability": "mutable",
                   "name": "",
                   "nodeType": "VariableDeclaration",
                   "overrides": null,
-                  "scope": 6892,
-                  "src": "214:7:6",
+                  "scope": 918,
+                  "src": "214:7:5",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -143,10 +143,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 6889,
+                    "id": 915,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "214:7:6",
+                    "src": "214:7:5",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -157,34 +157,34 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "213:9:6"
+              "src": "213:9:5"
             },
-            "scope": 6893,
-            "src": "128:95:6",
+            "scope": 919,
+            "src": "128:95:5",
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           }
         ],
-        "scope": 6894,
-        "src": "97:128:6"
+        "scope": 920,
+        "src": "97:128:5"
       }
     ],
-    "src": "32:194:6"
+    "src": "32:194:5"
   },
   "legacyAST": {
     "absolutePath": "/Users/shredder/git/renft/renft-contracts/contracts/interfaces/ILendingPoolCore.sol",
     "exportedSymbols": {
       "ILendingPoolCore": [
-        6893
+        919
       ]
     },
-    "id": 6894,
+    "id": 920,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 6884,
+        "id": 910,
         "literals": [
           "solidity",
           "^",
@@ -192,16 +192,16 @@
           ".0"
         ],
         "nodeType": "PragmaDirective",
-        "src": "32:23:6"
+        "src": "32:23:5"
       },
       {
         "absolutePath": "/Users/shredder/git/renft/renft-contracts/contracts/libraries/CoreLibrary.sol",
         "file": "../libraries/CoreLibrary.sol",
-        "id": 6885,
+        "id": 911,
         "nodeType": "ImportDirective",
-        "scope": 6894,
-        "sourceUnit": 6962,
-        "src": "57:38:6",
+        "scope": 920,
+        "sourceUnit": 985,
+        "src": "57:38:5",
         "symbolAliases": [],
         "unitAlias": ""
       },
@@ -212,9 +212,9 @@
         "contractKind": "interface",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 6893,
+        "id": 919,
         "linearizedBaseContracts": [
-          6893
+          919
         ],
         "name": "ILendingPoolCore",
         "nodeType": "ContractDefinition",
@@ -223,7 +223,7 @@
             "body": null,
             "documentation": null,
             "functionSelector": "34b3beee",
-            "id": 6892,
+            "id": 918,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
@@ -231,18 +231,18 @@
             "nodeType": "FunctionDefinition",
             "overrides": null,
             "parameters": {
-              "id": 6888,
+              "id": 914,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 6887,
+                  "id": 913,
                   "mutability": "mutable",
                   "name": "_reserve",
                   "nodeType": "VariableDeclaration",
                   "overrides": null,
-                  "scope": 6892,
-                  "src": "161:16:6",
+                  "scope": 918,
+                  "src": "161:16:5",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -250,10 +250,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 6886,
+                    "id": 912,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "161:7:6",
+                    "src": "161:7:5",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -264,21 +264,21 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "160:18:6"
+              "src": "160:18:5"
             },
             "returnParameters": {
-              "id": 6891,
+              "id": 917,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 6890,
+                  "id": 916,
                   "mutability": "mutable",
                   "name": "",
                   "nodeType": "VariableDeclaration",
                   "overrides": null,
-                  "scope": 6892,
-                  "src": "214:7:6",
+                  "scope": 918,
+                  "src": "214:7:5",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -286,10 +286,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 6889,
+                    "id": 915,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "214:7:6",
+                    "src": "214:7:5",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -300,20 +300,20 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "213:9:6"
+              "src": "213:9:5"
             },
-            "scope": 6893,
-            "src": "128:95:6",
+            "scope": 919,
+            "src": "128:95:5",
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           }
         ],
-        "scope": 6894,
-        "src": "97:128:6"
+        "scope": 920,
+        "src": "97:128:5"
       }
     ],
-    "src": "32:194:6"
+    "src": "32:194:5"
   },
   "compiler": {
     "name": "solc",
@@ -321,7 +321,7 @@
   },
   "networks": {},
   "schemaVersion": "3.2.5",
-  "updatedAt": "2020-10-19T09:46:50.346Z",
+  "updatedAt": "2020-10-19T13:59:42.503Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},
