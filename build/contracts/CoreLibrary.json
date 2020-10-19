@@ -1,27 +1,27 @@
 {
   "contractName": "CoreLibrary",
   "abi": [],
-  "metadata": "{\"compiler\":{\"version\":\"0.6.12+commit.27d51765\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"author\":\"Aave\",\"kind\":\"dev\",\"methods\":{},\"title\":\"CoreLibrary library\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"notice\":\"Defines the data structures of the reserves and the user data*\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"/Users/shredder/git/renft-contracts/contracts/libraries/CoreLibrary.sol\":\"CoreLibrary\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/shredder/git/renft-contracts/contracts/libraries/CoreLibrary.sol\":{\"keccak256\":\"0xd3d337215c1b3b54960240c57bceef43fe47b6cba77f66f51224a0c9a32e9b68\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6305d72436ec38bc8fd05eb37b3126409ade74c9ed41ea67b0015971b7aa8ef1\",\"dweb:/ipfs/QmZJT7rYCAAYAop3j3YfRT8zpnUiRYgSYDHdGXR85WSCVf\"]}},\"version\":1}",
-  "bytecode": "0x60566023600b82828239805160001a607314601657fe5b30600052607381538281f3fe73000000000000000000000000000000000000000030146080604052600080fdfea2646970667358221220838852ec79b19d9022ca9078cbe1ba7a64edc76973bc7ec24a4d309d679da42564736f6c634300060c0033",
-  "deployedBytecode": "0x73000000000000000000000000000000000000000030146080604052600080fdfea2646970667358221220838852ec79b19d9022ca9078cbe1ba7a64edc76973bc7ec24a4d309d679da42564736f6c634300060c0033",
+  "metadata": "{\"compiler\":{\"version\":\"0.6.12+commit.27d51765\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"author\":\"Aave\",\"kind\":\"dev\",\"methods\":{},\"title\":\"CoreLibrary library\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"notice\":\"Defines the data structures of the reserves and the user data*\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"/Users/shredder/git/renft/renft-contracts/contracts/libraries/CoreLibrary.sol\":\"CoreLibrary\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/shredder/git/renft/renft-contracts/contracts/libraries/CoreLibrary.sol\":{\"keccak256\":\"0xd3d337215c1b3b54960240c57bceef43fe47b6cba77f66f51224a0c9a32e9b68\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6305d72436ec38bc8fd05eb37b3126409ade74c9ed41ea67b0015971b7aa8ef1\",\"dweb:/ipfs/QmZJT7rYCAAYAop3j3YfRT8zpnUiRYgSYDHdGXR85WSCVf\"]}},\"version\":1}",
+  "bytecode": "0x60566023600b82828239805160001a607314601657fe5b30600052607381538281f3fe73000000000000000000000000000000000000000030146080604052600080fdfea264697066735822122035b0621668ec48bb94dff8460db796f521eb20b762a4fa7e285035eb07cad13264736f6c634300060c0033",
+  "deployedBytecode": "0x73000000000000000000000000000000000000000030146080604052600080fdfea264697066735822122035b0621668ec48bb94dff8460db796f521eb20b762a4fa7e285035eb07cad13264736f6c634300060c0033",
   "immutableReferences": {},
-  "sourceMap": "268:16911:6:-:0;;;;;;;;;;;;;;;;;;;;;;;;;",
-  "deployedSourceMap": "268:16911:6:-:0;;;;;;;;",
+  "sourceMap": "268:16911:7:-:0;;;;;;;;;;;;;;;;;;;;;;;;;",
+  "deployedSourceMap": "268:16911:7:-:0;;;;;;;;",
   "source": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.0;\n\n// import \"../utils/math/SafeMath.sol\";\n// import \"../utils/math/WadRayMath.sol\";\n\n/**\n * @title CoreLibrary library\n * @author Aave\n * @notice Defines the data structures of the reserves and the user data\n **/\nlibrary CoreLibrary {\n  //   using SafeMath for uint256;\n  //   using WadRayMath for uint256;\n\n  enum InterestRateMode {NONE, STABLE, VARIABLE}\n\n  uint256 internal constant SECONDS_PER_YEAR = 365 days;\n\n  struct UserReserveData {\n    //principal amount borrowed by the user.\n    uint256 principalBorrowBalance;\n    //cumulated variable borrow index for the user. Expressed in ray\n    uint256 lastVariableBorrowCumulativeIndex;\n    //origination fee cumulated by the user\n    uint256 originationFee;\n    // stable borrow rate at which the user has borrowed. Expressed in ray\n    uint256 stableBorrowRate;\n    uint40 lastUpdateTimestamp;\n    //defines if a specific deposit should or not be used as a collateral in borrows\n    bool useAsCollateral;\n  }\n\n  struct ReserveData {\n    /**\n     * @dev refer to the whitepaper, section 1.1 basic concepts for a formal description of these properties.\n     **/\n    //the liquidity index. Expressed in ray\n    uint256 lastLiquidityCumulativeIndex;\n    //the current supply rate. Expressed in ray\n    uint256 currentLiquidityRate;\n    //the total borrows of the reserve at a stable rate. Expressed in the currency decimals\n    uint256 totalBorrowsStable;\n    //the total borrows of the reserve at a variable rate. Expressed in the currency decimals\n    uint256 totalBorrowsVariable;\n    //the current variable borrow rate. Expressed in ray\n    uint256 currentVariableBorrowRate;\n    //the current stable borrow rate. Expressed in ray\n    uint256 currentStableBorrowRate;\n    //the current average stable borrow rate (weighted average of all the different stable rate loans). Expressed in ray\n    uint256 currentAverageStableBorrowRate;\n    //variable borrow index. Expressed in ray\n    uint256 lastVariableBorrowCumulativeIndex;\n    //the ltv of the reserve. Expressed in percentage (0-100)\n    uint256 baseLTVasCollateral;\n    //the liquidation threshold of the reserve. Expressed in percentage (0-100)\n    uint256 liquidationThreshold;\n    //the liquidation bonus of the reserve. Expressed in percentage\n    uint256 liquidationBonus;\n    //the decimals of the reserve asset\n    uint256 decimals;\n    /**\n     * @dev address of the aToken representing the asset\n     **/\n    address aTokenAddress;\n    /**\n     * @dev address of the interest rate strategy contract\n     **/\n    address interestRateStrategyAddress;\n    uint40 lastUpdateTimestamp;\n    // borrowingEnabled = true means users can borrow from this reserve\n    bool borrowingEnabled;\n    // usageAsCollateralEnabled = true means users can use this reserve as collateral\n    bool usageAsCollateralEnabled;\n    // isStableBorrowRateEnabled = true means users can borrow at a stable rate\n    bool isStableBorrowRateEnabled;\n    // isActive = true means the reserve has been activated and properly configured\n    bool isActive;\n    // isFreezed = true means the reserve only allows repays and redeems, but not deposits, new borrowings or rate swap\n    bool isFreezed;\n  }\n\n  //   /**\n  //    * @dev returns the ongoing normalized income for the reserve.\n  //    * a value of 1e27 means there is no income. As time passes, the income is accrued.\n  //    * A value of 2*1e27 means that the income of the reserve is double the initial amount.\n  //    * @param _reserve the reserve object\n  //    * @return the normalized income. expressed in ray\n  //    **/\n  //   function getNormalizedIncome(CoreLibrary.ReserveData storage _reserve)\n  //     internal\n  //     view\n  //     returns (uint256)\n  //   {\n  //     uint256 cumulated = calculateLinearInterest(\n  //       _reserve\n  //         .currentLiquidityRate,\n  //       _reserve\n  //         .lastUpdateTimestamp\n  //     )\n  //       .rayMul(_reserve.lastLiquidityCumulativeIndex);\n\n  //     return cumulated;\n  //   }\n\n  //   /**\n  //    * @dev Updates the liquidity cumulative index Ci and variable borrow cumulative index Bvc. Refer to the whitepaper for\n  //    * a formal specification.\n  //    * @param _self the reserve object\n  //    **/\n  //   function updateCumulativeIndexes(ReserveData storage _self) internal {\n  //     uint256 totalBorrows = getTotalBorrows(_self);\n\n  //     if (totalBorrows > 0) {\n  //       //only cumulating if there is any income being produced\n  //       uint256 cumulatedLiquidityInterest = calculateLinearInterest(\n  //         _self.currentLiquidityRate,\n  //         _self.lastUpdateTimestamp\n  //       );\n\n  //       _self.lastLiquidityCumulativeIndex = cumulatedLiquidityInterest.rayMul(\n  //         _self.lastLiquidityCumulativeIndex\n  //       );\n\n  //       uint256 cumulatedVariableBorrowInterest = calculateCompoundedInterest(\n  //         _self.currentVariableBorrowRate,\n  //         _self.lastUpdateTimestamp\n  //       );\n  //       _self.lastVariableBorrowCumulativeIndex = cumulatedVariableBorrowInterest\n  //         .rayMul(_self.lastVariableBorrowCumulativeIndex);\n  //     }\n  //   }\n\n  //   /**\n  //    * @dev accumulates a predefined amount of asset to the reserve as a fixed, one time income. Used for example to accumulate\n  //    * the flashloan fee to the reserve, and spread it through the depositors.\n  //    * @param _self the reserve object\n  //    * @param _totalLiquidity the total liquidity available in the reserve\n  //    * @param _amount the amount to accomulate\n  //    **/\n  //   function cumulateToLiquidityIndex(\n  //     ReserveData storage _self,\n  //     uint256 _totalLiquidity,\n  //     uint256 _amount\n  //   ) internal {\n  //     uint256 amountToLiquidityRatio = _amount.wadToRay().rayDiv(\n  //       _totalLiquidity.wadToRay()\n  //     );\n\n  //     uint256 cumulatedLiquidity = amountToLiquidityRatio.add(WadRayMath.ray());\n\n  //     _self.lastLiquidityCumulativeIndex = cumulatedLiquidity.rayMul(\n  //       _self.lastLiquidityCumulativeIndex\n  //     );\n  //   }\n\n  //   /**\n  //    * @dev initializes a reserve\n  //    * @param _self the reserve object\n  //    * @param _aTokenAddress the address of the overlying atoken contract\n  //    * @param _decimals the number of decimals of the underlying asset\n  //    * @param _interestRateStrategyAddress the address of the interest rate strategy contract\n  //    **/\n  //   function init(\n  //     ReserveData storage _self,\n  //     address _aTokenAddress,\n  //     uint256 _decimals,\n  //     address _interestRateStrategyAddress\n  //   ) external {\n  //     require(\n  //       _self.aTokenAddress == address(0),\n  //       \"Reserve has already been initialized\"\n  //     );\n\n  //     if (_self.lastLiquidityCumulativeIndex == 0) {\n  //       //if the reserve has not been initialized yet\n  //       _self.lastLiquidityCumulativeIndex = WadRayMath.ray();\n  //     }\n\n  //     if (_self.lastVariableBorrowCumulativeIndex == 0) {\n  //       _self.lastVariableBorrowCumulativeIndex = WadRayMath.ray();\n  //     }\n\n  //     _self.aTokenAddress = _aTokenAddress;\n  //     _self.decimals = _decimals;\n\n  //     _self.interestRateStrategyAddress = _interestRateStrategyAddress;\n  //     _self.isActive = true;\n  //     _self.isFreezed = false;\n  //   }\n\n  //   /**\n  //    * @dev enables borrowing on a reserve\n  //    * @param _self the reserve object\n  //    * @param _stableBorrowRateEnabled true if the stable borrow rate must be enabled by default, false otherwise\n  //    **/\n  //   function enableBorrowing(\n  //     ReserveData storage _self,\n  //     bool _stableBorrowRateEnabled\n  //   ) external {\n  //     require(_self.borrowingEnabled == false, \"Reserve is already enabled\");\n\n  //     _self.borrowingEnabled = true;\n  //     _self.isStableBorrowRateEnabled = _stableBorrowRateEnabled;\n  //   }\n\n  //   /**\n  //    * @dev disables borrowing on a reserve\n  //    * @param _self the reserve object\n  //    **/\n  //   function disableBorrowing(ReserveData storage _self) external {\n  //     _self.borrowingEnabled = false;\n  //   }\n\n  //   /**\n  //    * @dev enables a reserve to be used as collateral\n  //    * @param _self the reserve object\n  //    * @param _baseLTVasCollateral the loan to value of the asset when used as collateral\n  //    * @param _liquidationThreshold the threshold at which loans using this asset as collateral will be considered undercollateralized\n  //    * @param _liquidationBonus the bonus liquidators receive to liquidate this asset\n  //    **/\n  //   function enableAsCollateral(\n  //     ReserveData storage _self,\n  //     uint256 _baseLTVasCollateral,\n  //     uint256 _liquidationThreshold,\n  //     uint256 _liquidationBonus\n  //   ) external {\n  //     require(\n  //       _self.usageAsCollateralEnabled == false,\n  //       \"Reserve is already enabled as collateral\"\n  //     );\n\n  //     _self.usageAsCollateralEnabled = true;\n  //     _self.baseLTVasCollateral = _baseLTVasCollateral;\n  //     _self.liquidationThreshold = _liquidationThreshold;\n  //     _self.liquidationBonus = _liquidationBonus;\n\n  //     if (_self.lastLiquidityCumulativeIndex == 0)\n  //       _self.lastLiquidityCumulativeIndex = WadRayMath.ray();\n  //   }\n\n  //   /**\n  //    * @dev disables a reserve as collateral\n  //    * @param _self the reserve object\n  //    **/\n  //   function disableAsCollateral(ReserveData storage _self) external {\n  //     _self.usageAsCollateralEnabled = false;\n  //   }\n\n  //   /**\n  //    * @dev calculates the compounded borrow balance of a user\n  //    * @param _self the userReserve object\n  //    * @param _reserve the reserve object\n  //    * @return the user compounded borrow balance\n  //    **/\n  //   function getCompoundedBorrowBalance(\n  //     CoreLibrary.UserReserveData storage _self,\n  //     CoreLibrary.ReserveData storage _reserve\n  //   ) internal view returns (uint256) {\n  //     if (_self.principalBorrowBalance == 0) return 0;\n\n  //     uint256 principalBorrowBalanceRay = _self.principalBorrowBalance.wadToRay();\n  //     uint256 compoundedBalance = 0;\n  //     uint256 cumulatedInterest = 0;\n\n  //     if (_self.stableBorrowRate > 0) {\n  //       cumulatedInterest = calculateCompoundedInterest(\n  //         _self.stableBorrowRate,\n  //         _self.lastUpdateTimestamp\n  //       );\n  //     } else {\n  //       //variable interest\n  //       cumulatedInterest = calculateCompoundedInterest(\n  //         _reserve\n  //           .currentVariableBorrowRate,\n  //         _reserve\n  //           .lastUpdateTimestamp\n  //       )\n  //         .rayMul(_reserve.lastVariableBorrowCumulativeIndex)\n  //         .rayDiv(_self.lastVariableBorrowCumulativeIndex);\n  //     }\n\n  //     compoundedBalance = principalBorrowBalanceRay\n  //       .rayMul(cumulatedInterest)\n  //       .rayToWad();\n\n  //     if (compoundedBalance == _self.principalBorrowBalance) {\n  //       //solium-disable-next-line\n  //       if (_self.lastUpdateTimestamp != block.timestamp) {\n  //         //no interest cumulation because of the rounding - we add 1 wei\n  //         //as symbolic cumulated interest to avoid interest free loans.\n\n  //         return _self.principalBorrowBalance.add(1 wei);\n  //       }\n  //     }\n\n  //     return compoundedBalance;\n  //   }\n\n  //   /**\n  //    * @dev increases the total borrows at a stable rate on a specific reserve and updates the\n  //    * average stable rate consequently\n  //    * @param _reserve the reserve object\n  //    * @param _amount the amount to add to the total borrows stable\n  //    * @param _rate the rate at which the amount has been borrowed\n  //    **/\n  //   function increaseTotalBorrowsStableAndUpdateAverageRate(\n  //     ReserveData storage _reserve,\n  //     uint256 _amount,\n  //     uint256 _rate\n  //   ) internal {\n  //     uint256 previousTotalBorrowStable = _reserve.totalBorrowsStable;\n  //     //updating reserve borrows stable\n  //     _reserve.totalBorrowsStable = _reserve.totalBorrowsStable.add(_amount);\n\n  //     //update the average stable rate\n  //     //weighted average of all the borrows\n  //     uint256 weightedLastBorrow = _amount.wadToRay().rayMul(_rate);\n  //     uint256 weightedPreviousTotalBorrows = previousTotalBorrowStable\n  //       .wadToRay()\n  //       .rayMul(_reserve.currentAverageStableBorrowRate);\n\n  //     _reserve.currentAverageStableBorrowRate = weightedLastBorrow\n  //       .add(weightedPreviousTotalBorrows)\n  //       .rayDiv(_reserve.totalBorrowsStable.wadToRay());\n  //   }\n\n  //   /**\n  //    * @dev decreases the total borrows at a stable rate on a specific reserve and updates the\n  //    * average stable rate consequently\n  //    * @param _reserve the reserve object\n  //    * @param _amount the amount to substract to the total borrows stable\n  //    * @param _rate the rate at which the amount has been repaid\n  //    **/\n  //   function decreaseTotalBorrowsStableAndUpdateAverageRate(\n  //     ReserveData storage _reserve,\n  //     uint256 _amount,\n  //     uint256 _rate\n  //   ) internal {\n  //     require(\n  //       _reserve.totalBorrowsStable >= _amount,\n  //       \"Invalid amount to decrease\"\n  //     );\n\n  //     uint256 previousTotalBorrowStable = _reserve.totalBorrowsStable;\n\n  //     //updating reserve borrows stable\n  //     _reserve.totalBorrowsStable = _reserve.totalBorrowsStable.sub(_amount);\n\n  //     if (_reserve.totalBorrowsStable == 0) {\n  //       _reserve.currentAverageStableBorrowRate = 0; //no income if there are no stable rate borrows\n  //       return;\n  //     }\n\n  //     //update the average stable rate\n  //     //weighted average of all the borrows\n  //     uint256 weightedLastBorrow = _amount.wadToRay().rayMul(_rate);\n  //     uint256 weightedPreviousTotalBorrows = previousTotalBorrowStable\n  //       .wadToRay()\n  //       .rayMul(_reserve.currentAverageStableBorrowRate);\n\n  //     require(\n  //       weightedPreviousTotalBorrows >= weightedLastBorrow,\n  //       \"The amounts to subtract don't match\"\n  //     );\n\n  //     _reserve.currentAverageStableBorrowRate = weightedPreviousTotalBorrows\n  //       .sub(weightedLastBorrow)\n  //       .rayDiv(_reserve.totalBorrowsStable.wadToRay());\n  //   }\n\n  //   /**\n  //    * @dev increases the total borrows at a variable rate\n  //    * @param _reserve the reserve object\n  //    * @param _amount the amount to add to the total borrows variable\n  //    **/\n  //   function increaseTotalBorrowsVariable(\n  //     ReserveData storage _reserve,\n  //     uint256 _amount\n  //   ) internal {\n  //     _reserve.totalBorrowsVariable = _reserve.totalBorrowsVariable.add(_amount);\n  //   }\n\n  //   /**\n  //    * @dev decreases the total borrows at a variable rate\n  //    * @param _reserve the reserve object\n  //    * @param _amount the amount to substract to the total borrows variable\n  //    **/\n  //   function decreaseTotalBorrowsVariable(\n  //     ReserveData storage _reserve,\n  //     uint256 _amount\n  //   ) internal {\n  //     require(\n  //       _reserve.totalBorrowsVariable >= _amount,\n  //       \"The amount that is being subtracted from the variable total borrows is incorrect\"\n  //     );\n  //     _reserve.totalBorrowsVariable = _reserve.totalBorrowsVariable.sub(_amount);\n  //   }\n\n  //   /**\n  //    * @dev function to calculate the interest using a linear interest rate formula\n  //    * @param _rate the interest rate, in ray\n  //    * @param _lastUpdateTimestamp the timestamp of the last update of the interest\n  //    * @return the interest rate linearly accumulated during the timeDelta, in ray\n  //    **/\n\n  //   function calculateLinearInterest(uint256 _rate, uint40 _lastUpdateTimestamp)\n  //     internal\n  //     view\n  //     returns (uint256)\n  //   {\n  //     //solium-disable-next-line\n  //     uint256 timeDifference = block.timestamp.sub(uint256(_lastUpdateTimestamp));\n\n  //     uint256 timeDelta = timeDifference.wadToRay().rayDiv(\n  //       SECONDS_PER_YEAR.wadToRay()\n  //     );\n\n  //     return _rate.rayMul(timeDelta).add(WadRayMath.ray());\n  //   }\n\n  //   /**\n  //    * @dev function to calculate the interest using a compounded interest rate formula\n  //    * @param _rate the interest rate, in ray\n  //    * @param _lastUpdateTimestamp the timestamp of the last update of the interest\n  //    * @return the interest rate compounded during the timeDelta, in ray\n  //    **/\n  //   function calculateCompoundedInterest(\n  //     uint256 _rate,\n  //     uint40 _lastUpdateTimestamp\n  //   ) internal view returns (uint256) {\n  //     //solium-disable-next-line\n  //     uint256 timeDifference = block.timestamp.sub(uint256(_lastUpdateTimestamp));\n\n  //     uint256 ratePerSecond = _rate.div(SECONDS_PER_YEAR);\n\n  //     return ratePerSecond.add(WadRayMath.ray()).rayPow(timeDifference);\n  //   }\n\n  //   /**\n  //    * @dev returns the total borrows on the reserve\n  //    * @param _reserve the reserve object\n  //    * @return the total borrows (stable + variable)\n  //    **/\n  //   function getTotalBorrows(CoreLibrary.ReserveData storage _reserve)\n  //     internal\n  //     view\n  //     returns (uint256)\n  //   {\n  //     return _reserve.totalBorrowsStable.add(_reserve.totalBorrowsVariable);\n  //   }\n}\n",
-  "sourcePath": "/Users/shredder/git/renft-contracts/contracts/libraries/CoreLibrary.sol",
+  "sourcePath": "/Users/shredder/git/renft/renft-contracts/contracts/libraries/CoreLibrary.sol",
   "ast": {
-    "absolutePath": "/Users/shredder/git/renft-contracts/contracts/libraries/CoreLibrary.sol",
+    "absolutePath": "/Users/shredder/git/renft/renft-contracts/contracts/libraries/CoreLibrary.sol",
     "exportedSymbols": {
       "CoreLibrary": [
-        6917
+        6961
       ]
     },
-    "id": 6918,
+    "id": 6962,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 6851,
+        "id": 6895,
         "literals": [
           "solidity",
           "^",
@@ -29,7 +29,7 @@
           ".0"
         ],
         "nodeType": "PragmaDirective",
-        "src": "32:23:6"
+        "src": "32:23:7"
       },
       {
         "abstract": false,
@@ -37,55 +37,55 @@
         "contractDependencies": [],
         "contractKind": "library",
         "documentation": {
-          "id": 6852,
+          "id": 6896,
           "nodeType": "StructuredDocumentation",
-          "src": "140:127:6",
+          "src": "140:127:7",
           "text": " @title CoreLibrary library\n @author Aave\n @notice Defines the data structures of the reserves and the user data*"
         },
         "fullyImplemented": true,
-        "id": 6917,
+        "id": 6961,
         "linearizedBaseContracts": [
-          6917
+          6961
         ],
         "name": "CoreLibrary",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "canonicalName": "CoreLibrary.InterestRateMode",
-            "id": 6856,
+            "id": 6900,
             "members": [
               {
-                "id": 6853,
+                "id": 6897,
                 "name": "NONE",
                 "nodeType": "EnumValue",
-                "src": "388:4:6"
+                "src": "388:4:7"
               },
               {
-                "id": 6854,
+                "id": 6898,
                 "name": "STABLE",
                 "nodeType": "EnumValue",
-                "src": "394:6:6"
+                "src": "394:6:7"
               },
               {
-                "id": 6855,
+                "id": 6899,
                 "name": "VARIABLE",
                 "nodeType": "EnumValue",
-                "src": "402:8:6"
+                "src": "402:8:7"
               }
             ],
             "name": "InterestRateMode",
             "nodeType": "EnumDefinition",
-            "src": "365:46:6"
+            "src": "365:46:7"
           },
           {
             "constant": true,
-            "id": 6859,
+            "id": 6903,
             "mutability": "constant",
             "name": "SECONDS_PER_YEAR",
             "nodeType": "VariableDeclaration",
             "overrides": null,
-            "scope": 6917,
-            "src": "415:53:6",
+            "scope": 6961,
+            "src": "415:53:7",
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
@@ -93,10 +93,10 @@
               "typeString": "uint256"
             },
             "typeName": {
-              "id": 6857,
+              "id": 6901,
               "name": "uint256",
               "nodeType": "ElementaryTypeName",
-              "src": "415:7:6",
+              "src": "415:7:7",
               "typeDescriptions": {
                 "typeIdentifier": "t_uint256",
                 "typeString": "uint256"
@@ -105,14 +105,14 @@
             "value": {
               "argumentTypes": null,
               "hexValue": "333635",
-              "id": 6858,
+              "id": 6902,
               "isConstant": false,
               "isLValue": false,
               "isPure": true,
               "kind": "number",
               "lValueRequested": false,
               "nodeType": "Literal",
-              "src": "460:8:6",
+              "src": "460:8:7",
               "subdenomination": "days",
               "typeDescriptions": {
                 "typeIdentifier": "t_rational_31536000_by_1",
@@ -124,17 +124,17 @@
           },
           {
             "canonicalName": "CoreLibrary.UserReserveData",
-            "id": 6872,
+            "id": 6916,
             "members": [
               {
                 "constant": false,
-                "id": 6861,
+                "id": 6905,
                 "mutability": "mutable",
                 "name": "principalBorrowBalance",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6872,
-                "src": "547:30:6",
+                "scope": 6916,
+                "src": "547:30:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -142,10 +142,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6860,
+                  "id": 6904,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "547:7:6",
+                  "src": "547:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -156,13 +156,13 @@
               },
               {
                 "constant": false,
-                "id": 6863,
+                "id": 6907,
                 "mutability": "mutable",
                 "name": "lastVariableBorrowCumulativeIndex",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6872,
-                "src": "652:41:6",
+                "scope": 6916,
+                "src": "652:41:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -170,10 +170,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6862,
+                  "id": 6906,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "652:7:6",
+                  "src": "652:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -184,13 +184,13 @@
               },
               {
                 "constant": false,
-                "id": 6865,
+                "id": 6909,
                 "mutability": "mutable",
                 "name": "originationFee",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6872,
-                "src": "743:22:6",
+                "scope": 6916,
+                "src": "743:22:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -198,10 +198,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6864,
+                  "id": 6908,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "743:7:6",
+                  "src": "743:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -212,13 +212,13 @@
               },
               {
                 "constant": false,
-                "id": 6867,
+                "id": 6911,
                 "mutability": "mutable",
                 "name": "stableBorrowRate",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6872,
-                "src": "846:24:6",
+                "scope": 6916,
+                "src": "846:24:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -226,10 +226,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6866,
+                  "id": 6910,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "846:7:6",
+                  "src": "846:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -240,13 +240,13 @@
               },
               {
                 "constant": false,
-                "id": 6869,
+                "id": 6913,
                 "mutability": "mutable",
                 "name": "lastUpdateTimestamp",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6872,
-                "src": "876:26:6",
+                "scope": 6916,
+                "src": "876:26:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -254,10 +254,10 @@
                   "typeString": "uint40"
                 },
                 "typeName": {
-                  "id": 6868,
+                  "id": 6912,
                   "name": "uint40",
                   "nodeType": "ElementaryTypeName",
-                  "src": "876:6:6",
+                  "src": "876:6:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint40",
                     "typeString": "uint40"
@@ -268,13 +268,13 @@
               },
               {
                 "constant": false,
-                "id": 6871,
+                "id": 6915,
                 "mutability": "mutable",
                 "name": "useAsCollateral",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6872,
-                "src": "993:20:6",
+                "scope": 6916,
+                "src": "993:20:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -282,10 +282,10 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 6870,
+                  "id": 6914,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
-                  "src": "993:4:6",
+                  "src": "993:4:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bool",
                     "typeString": "bool"
@@ -297,23 +297,23 @@
             ],
             "name": "UserReserveData",
             "nodeType": "StructDefinition",
-            "scope": 6917,
-            "src": "473:545:6",
+            "scope": 6961,
+            "src": "473:545:7",
             "visibility": "public"
           },
           {
             "canonicalName": "CoreLibrary.ReserveData",
-            "id": 6916,
+            "id": 6960,
             "members": [
               {
                 "constant": false,
-                "id": 6875,
+                "id": 6919,
                 "mutability": "mutable",
                 "name": "lastLiquidityCumulativeIndex",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1218:36:6",
+                "scope": 6960,
+                "src": "1218:36:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -321,10 +321,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6874,
+                  "id": 6918,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1218:7:6",
+                  "src": "1218:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -335,13 +335,13 @@
               },
               {
                 "constant": false,
-                "id": 6877,
+                "id": 6921,
                 "mutability": "mutable",
                 "name": "currentLiquidityRate",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1308:28:6",
+                "scope": 6960,
+                "src": "1308:28:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -349,10 +349,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6876,
+                  "id": 6920,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1308:7:6",
+                  "src": "1308:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -363,13 +363,13 @@
               },
               {
                 "constant": false,
-                "id": 6879,
+                "id": 6923,
                 "mutability": "mutable",
                 "name": "totalBorrowsStable",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1434:26:6",
+                "scope": 6960,
+                "src": "1434:26:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -377,10 +377,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6878,
+                  "id": 6922,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1434:7:6",
+                  "src": "1434:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -391,13 +391,13 @@
               },
               {
                 "constant": false,
-                "id": 6881,
+                "id": 6925,
                 "mutability": "mutable",
                 "name": "totalBorrowsVariable",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1560:28:6",
+                "scope": 6960,
+                "src": "1560:28:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -405,10 +405,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6880,
+                  "id": 6924,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1560:7:6",
+                  "src": "1560:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -419,13 +419,13 @@
               },
               {
                 "constant": false,
-                "id": 6883,
+                "id": 6927,
                 "mutability": "mutable",
                 "name": "currentVariableBorrowRate",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1651:33:6",
+                "scope": 6960,
+                "src": "1651:33:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -433,10 +433,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6882,
+                  "id": 6926,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1651:7:6",
+                  "src": "1651:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -447,13 +447,13 @@
               },
               {
                 "constant": false,
-                "id": 6885,
+                "id": 6929,
                 "mutability": "mutable",
                 "name": "currentStableBorrowRate",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1745:31:6",
+                "scope": 6960,
+                "src": "1745:31:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -461,10 +461,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6884,
+                  "id": 6928,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1745:7:6",
+                  "src": "1745:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -475,13 +475,13 @@
               },
               {
                 "constant": false,
-                "id": 6887,
+                "id": 6931,
                 "mutability": "mutable",
                 "name": "currentAverageStableBorrowRate",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1903:38:6",
+                "scope": 6960,
+                "src": "1903:38:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -489,10 +489,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6886,
+                  "id": 6930,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1903:7:6",
+                  "src": "1903:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -503,13 +503,13 @@
               },
               {
                 "constant": false,
-                "id": 6889,
+                "id": 6933,
                 "mutability": "mutable",
                 "name": "lastVariableBorrowCumulativeIndex",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1993:41:6",
+                "scope": 6960,
+                "src": "1993:41:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -517,10 +517,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6888,
+                  "id": 6932,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1993:7:6",
+                  "src": "1993:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -531,13 +531,13 @@
               },
               {
                 "constant": false,
-                "id": 6891,
+                "id": 6935,
                 "mutability": "mutable",
                 "name": "baseLTVasCollateral",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2102:27:6",
+                "scope": 6960,
+                "src": "2102:27:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -545,10 +545,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6890,
+                  "id": 6934,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2102:7:6",
+                  "src": "2102:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -559,13 +559,13 @@
               },
               {
                 "constant": false,
-                "id": 6893,
+                "id": 6937,
                 "mutability": "mutable",
                 "name": "liquidationThreshold",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2215:28:6",
+                "scope": 6960,
+                "src": "2215:28:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -573,10 +573,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6892,
+                  "id": 6936,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2215:7:6",
+                  "src": "2215:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -587,13 +587,13 @@
               },
               {
                 "constant": false,
-                "id": 6895,
+                "id": 6939,
                 "mutability": "mutable",
                 "name": "liquidationBonus",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2317:24:6",
+                "scope": 6960,
+                "src": "2317:24:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -601,10 +601,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6894,
+                  "id": 6938,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2317:7:6",
+                  "src": "2317:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -615,13 +615,13 @@
               },
               {
                 "constant": false,
-                "id": 6897,
+                "id": 6941,
                 "mutability": "mutable",
                 "name": "decimals",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2387:16:6",
+                "scope": 6960,
+                "src": "2387:16:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -629,10 +629,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6896,
+                  "id": 6940,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2387:7:6",
+                  "src": "2387:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -643,13 +643,13 @@
               },
               {
                 "constant": false,
-                "id": 6900,
+                "id": 6944,
                 "mutability": "mutable",
                 "name": "aTokenAddress",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2483:21:6",
+                "scope": 6960,
+                "src": "2483:21:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -657,10 +657,10 @@
                   "typeString": "address"
                 },
                 "typeName": {
-                  "id": 6899,
+                  "id": 6943,
                   "name": "address",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2483:7:6",
+                  "src": "2483:7:7",
                   "stateMutability": "nonpayable",
                   "typeDescriptions": {
                     "typeIdentifier": "t_address",
@@ -672,13 +672,13 @@
               },
               {
                 "constant": false,
-                "id": 6903,
+                "id": 6947,
                 "mutability": "mutable",
                 "name": "interestRateStrategyAddress",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2586:35:6",
+                "scope": 6960,
+                "src": "2586:35:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -686,10 +686,10 @@
                   "typeString": "address"
                 },
                 "typeName": {
-                  "id": 6902,
+                  "id": 6946,
                   "name": "address",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2586:7:6",
+                  "src": "2586:7:7",
                   "stateMutability": "nonpayable",
                   "typeDescriptions": {
                     "typeIdentifier": "t_address",
@@ -701,13 +701,13 @@
               },
               {
                 "constant": false,
-                "id": 6905,
+                "id": 6949,
                 "mutability": "mutable",
                 "name": "lastUpdateTimestamp",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2627:26:6",
+                "scope": 6960,
+                "src": "2627:26:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -715,10 +715,10 @@
                   "typeString": "uint40"
                 },
                 "typeName": {
-                  "id": 6904,
+                  "id": 6948,
                   "name": "uint40",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2627:6:6",
+                  "src": "2627:6:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint40",
                     "typeString": "uint40"
@@ -729,13 +729,13 @@
               },
               {
                 "constant": false,
-                "id": 6907,
+                "id": 6951,
                 "mutability": "mutable",
                 "name": "borrowingEnabled",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2731:21:6",
+                "scope": 6960,
+                "src": "2731:21:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -743,10 +743,10 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 6906,
+                  "id": 6950,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2731:4:6",
+                  "src": "2731:4:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bool",
                     "typeString": "bool"
@@ -757,13 +757,13 @@
               },
               {
                 "constant": false,
-                "id": 6909,
+                "id": 6953,
                 "mutability": "mutable",
                 "name": "usageAsCollateralEnabled",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2844:29:6",
+                "scope": 6960,
+                "src": "2844:29:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -771,10 +771,10 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 6908,
+                  "id": 6952,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2844:4:6",
+                  "src": "2844:4:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bool",
                     "typeString": "bool"
@@ -785,13 +785,13 @@
               },
               {
                 "constant": false,
-                "id": 6911,
+                "id": 6955,
                 "mutability": "mutable",
                 "name": "isStableBorrowRateEnabled",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2959:30:6",
+                "scope": 6960,
+                "src": "2959:30:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -799,10 +799,10 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 6910,
+                  "id": 6954,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2959:4:6",
+                  "src": "2959:4:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bool",
                     "typeString": "bool"
@@ -813,13 +813,13 @@
               },
               {
                 "constant": false,
-                "id": 6913,
+                "id": 6957,
                 "mutability": "mutable",
                 "name": "isActive",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "3079:13:6",
+                "scope": 6960,
+                "src": "3079:13:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -827,10 +827,10 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 6912,
+                  "id": 6956,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
-                  "src": "3079:4:6",
+                  "src": "3079:4:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bool",
                     "typeString": "bool"
@@ -841,13 +841,13 @@
               },
               {
                 "constant": false,
-                "id": 6915,
+                "id": 6959,
                 "mutability": "mutable",
                 "name": "isFreezed",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "3218:14:6",
+                "scope": 6960,
+                "src": "3218:14:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -855,10 +855,10 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 6914,
+                  "id": 6958,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
-                  "src": "3218:4:6",
+                  "src": "3218:4:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bool",
                     "typeString": "bool"
@@ -870,30 +870,30 @@
             ],
             "name": "ReserveData",
             "nodeType": "StructDefinition",
-            "scope": 6917,
-            "src": "1022:2215:6",
+            "scope": 6961,
+            "src": "1022:2215:7",
             "visibility": "public"
           }
         ],
-        "scope": 6918,
-        "src": "268:16911:6"
+        "scope": 6962,
+        "src": "268:16911:7"
       }
     ],
-    "src": "32:17148:6"
+    "src": "32:17148:7"
   },
   "legacyAST": {
-    "absolutePath": "/Users/shredder/git/renft-contracts/contracts/libraries/CoreLibrary.sol",
+    "absolutePath": "/Users/shredder/git/renft/renft-contracts/contracts/libraries/CoreLibrary.sol",
     "exportedSymbols": {
       "CoreLibrary": [
-        6917
+        6961
       ]
     },
-    "id": 6918,
+    "id": 6962,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 6851,
+        "id": 6895,
         "literals": [
           "solidity",
           "^",
@@ -901,7 +901,7 @@
           ".0"
         ],
         "nodeType": "PragmaDirective",
-        "src": "32:23:6"
+        "src": "32:23:7"
       },
       {
         "abstract": false,
@@ -909,55 +909,55 @@
         "contractDependencies": [],
         "contractKind": "library",
         "documentation": {
-          "id": 6852,
+          "id": 6896,
           "nodeType": "StructuredDocumentation",
-          "src": "140:127:6",
+          "src": "140:127:7",
           "text": " @title CoreLibrary library\n @author Aave\n @notice Defines the data structures of the reserves and the user data*"
         },
         "fullyImplemented": true,
-        "id": 6917,
+        "id": 6961,
         "linearizedBaseContracts": [
-          6917
+          6961
         ],
         "name": "CoreLibrary",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "canonicalName": "CoreLibrary.InterestRateMode",
-            "id": 6856,
+            "id": 6900,
             "members": [
               {
-                "id": 6853,
+                "id": 6897,
                 "name": "NONE",
                 "nodeType": "EnumValue",
-                "src": "388:4:6"
+                "src": "388:4:7"
               },
               {
-                "id": 6854,
+                "id": 6898,
                 "name": "STABLE",
                 "nodeType": "EnumValue",
-                "src": "394:6:6"
+                "src": "394:6:7"
               },
               {
-                "id": 6855,
+                "id": 6899,
                 "name": "VARIABLE",
                 "nodeType": "EnumValue",
-                "src": "402:8:6"
+                "src": "402:8:7"
               }
             ],
             "name": "InterestRateMode",
             "nodeType": "EnumDefinition",
-            "src": "365:46:6"
+            "src": "365:46:7"
           },
           {
             "constant": true,
-            "id": 6859,
+            "id": 6903,
             "mutability": "constant",
             "name": "SECONDS_PER_YEAR",
             "nodeType": "VariableDeclaration",
             "overrides": null,
-            "scope": 6917,
-            "src": "415:53:6",
+            "scope": 6961,
+            "src": "415:53:7",
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
@@ -965,10 +965,10 @@
               "typeString": "uint256"
             },
             "typeName": {
-              "id": 6857,
+              "id": 6901,
               "name": "uint256",
               "nodeType": "ElementaryTypeName",
-              "src": "415:7:6",
+              "src": "415:7:7",
               "typeDescriptions": {
                 "typeIdentifier": "t_uint256",
                 "typeString": "uint256"
@@ -977,14 +977,14 @@
             "value": {
               "argumentTypes": null,
               "hexValue": "333635",
-              "id": 6858,
+              "id": 6902,
               "isConstant": false,
               "isLValue": false,
               "isPure": true,
               "kind": "number",
               "lValueRequested": false,
               "nodeType": "Literal",
-              "src": "460:8:6",
+              "src": "460:8:7",
               "subdenomination": "days",
               "typeDescriptions": {
                 "typeIdentifier": "t_rational_31536000_by_1",
@@ -996,17 +996,17 @@
           },
           {
             "canonicalName": "CoreLibrary.UserReserveData",
-            "id": 6872,
+            "id": 6916,
             "members": [
               {
                 "constant": false,
-                "id": 6861,
+                "id": 6905,
                 "mutability": "mutable",
                 "name": "principalBorrowBalance",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6872,
-                "src": "547:30:6",
+                "scope": 6916,
+                "src": "547:30:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1014,10 +1014,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6860,
+                  "id": 6904,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "547:7:6",
+                  "src": "547:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1028,13 +1028,13 @@
               },
               {
                 "constant": false,
-                "id": 6863,
+                "id": 6907,
                 "mutability": "mutable",
                 "name": "lastVariableBorrowCumulativeIndex",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6872,
-                "src": "652:41:6",
+                "scope": 6916,
+                "src": "652:41:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1042,10 +1042,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6862,
+                  "id": 6906,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "652:7:6",
+                  "src": "652:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1056,13 +1056,13 @@
               },
               {
                 "constant": false,
-                "id": 6865,
+                "id": 6909,
                 "mutability": "mutable",
                 "name": "originationFee",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6872,
-                "src": "743:22:6",
+                "scope": 6916,
+                "src": "743:22:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1070,10 +1070,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6864,
+                  "id": 6908,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "743:7:6",
+                  "src": "743:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1084,13 +1084,13 @@
               },
               {
                 "constant": false,
-                "id": 6867,
+                "id": 6911,
                 "mutability": "mutable",
                 "name": "stableBorrowRate",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6872,
-                "src": "846:24:6",
+                "scope": 6916,
+                "src": "846:24:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1098,10 +1098,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6866,
+                  "id": 6910,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "846:7:6",
+                  "src": "846:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1112,13 +1112,13 @@
               },
               {
                 "constant": false,
-                "id": 6869,
+                "id": 6913,
                 "mutability": "mutable",
                 "name": "lastUpdateTimestamp",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6872,
-                "src": "876:26:6",
+                "scope": 6916,
+                "src": "876:26:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1126,10 +1126,10 @@
                   "typeString": "uint40"
                 },
                 "typeName": {
-                  "id": 6868,
+                  "id": 6912,
                   "name": "uint40",
                   "nodeType": "ElementaryTypeName",
-                  "src": "876:6:6",
+                  "src": "876:6:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint40",
                     "typeString": "uint40"
@@ -1140,13 +1140,13 @@
               },
               {
                 "constant": false,
-                "id": 6871,
+                "id": 6915,
                 "mutability": "mutable",
                 "name": "useAsCollateral",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6872,
-                "src": "993:20:6",
+                "scope": 6916,
+                "src": "993:20:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1154,10 +1154,10 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 6870,
+                  "id": 6914,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
-                  "src": "993:4:6",
+                  "src": "993:4:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bool",
                     "typeString": "bool"
@@ -1169,23 +1169,23 @@
             ],
             "name": "UserReserveData",
             "nodeType": "StructDefinition",
-            "scope": 6917,
-            "src": "473:545:6",
+            "scope": 6961,
+            "src": "473:545:7",
             "visibility": "public"
           },
           {
             "canonicalName": "CoreLibrary.ReserveData",
-            "id": 6916,
+            "id": 6960,
             "members": [
               {
                 "constant": false,
-                "id": 6875,
+                "id": 6919,
                 "mutability": "mutable",
                 "name": "lastLiquidityCumulativeIndex",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1218:36:6",
+                "scope": 6960,
+                "src": "1218:36:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1193,10 +1193,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6874,
+                  "id": 6918,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1218:7:6",
+                  "src": "1218:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1207,13 +1207,13 @@
               },
               {
                 "constant": false,
-                "id": 6877,
+                "id": 6921,
                 "mutability": "mutable",
                 "name": "currentLiquidityRate",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1308:28:6",
+                "scope": 6960,
+                "src": "1308:28:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1221,10 +1221,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6876,
+                  "id": 6920,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1308:7:6",
+                  "src": "1308:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1235,13 +1235,13 @@
               },
               {
                 "constant": false,
-                "id": 6879,
+                "id": 6923,
                 "mutability": "mutable",
                 "name": "totalBorrowsStable",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1434:26:6",
+                "scope": 6960,
+                "src": "1434:26:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1249,10 +1249,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6878,
+                  "id": 6922,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1434:7:6",
+                  "src": "1434:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1263,13 +1263,13 @@
               },
               {
                 "constant": false,
-                "id": 6881,
+                "id": 6925,
                 "mutability": "mutable",
                 "name": "totalBorrowsVariable",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1560:28:6",
+                "scope": 6960,
+                "src": "1560:28:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1277,10 +1277,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6880,
+                  "id": 6924,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1560:7:6",
+                  "src": "1560:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1291,13 +1291,13 @@
               },
               {
                 "constant": false,
-                "id": 6883,
+                "id": 6927,
                 "mutability": "mutable",
                 "name": "currentVariableBorrowRate",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1651:33:6",
+                "scope": 6960,
+                "src": "1651:33:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1305,10 +1305,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6882,
+                  "id": 6926,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1651:7:6",
+                  "src": "1651:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1319,13 +1319,13 @@
               },
               {
                 "constant": false,
-                "id": 6885,
+                "id": 6929,
                 "mutability": "mutable",
                 "name": "currentStableBorrowRate",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1745:31:6",
+                "scope": 6960,
+                "src": "1745:31:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1333,10 +1333,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6884,
+                  "id": 6928,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1745:7:6",
+                  "src": "1745:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1347,13 +1347,13 @@
               },
               {
                 "constant": false,
-                "id": 6887,
+                "id": 6931,
                 "mutability": "mutable",
                 "name": "currentAverageStableBorrowRate",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1903:38:6",
+                "scope": 6960,
+                "src": "1903:38:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1361,10 +1361,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6886,
+                  "id": 6930,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1903:7:6",
+                  "src": "1903:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1375,13 +1375,13 @@
               },
               {
                 "constant": false,
-                "id": 6889,
+                "id": 6933,
                 "mutability": "mutable",
                 "name": "lastVariableBorrowCumulativeIndex",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "1993:41:6",
+                "scope": 6960,
+                "src": "1993:41:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1389,10 +1389,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6888,
+                  "id": 6932,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "1993:7:6",
+                  "src": "1993:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1403,13 +1403,13 @@
               },
               {
                 "constant": false,
-                "id": 6891,
+                "id": 6935,
                 "mutability": "mutable",
                 "name": "baseLTVasCollateral",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2102:27:6",
+                "scope": 6960,
+                "src": "2102:27:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1417,10 +1417,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6890,
+                  "id": 6934,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2102:7:6",
+                  "src": "2102:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1431,13 +1431,13 @@
               },
               {
                 "constant": false,
-                "id": 6893,
+                "id": 6937,
                 "mutability": "mutable",
                 "name": "liquidationThreshold",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2215:28:6",
+                "scope": 6960,
+                "src": "2215:28:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1445,10 +1445,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6892,
+                  "id": 6936,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2215:7:6",
+                  "src": "2215:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1459,13 +1459,13 @@
               },
               {
                 "constant": false,
-                "id": 6895,
+                "id": 6939,
                 "mutability": "mutable",
                 "name": "liquidationBonus",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2317:24:6",
+                "scope": 6960,
+                "src": "2317:24:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1473,10 +1473,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6894,
+                  "id": 6938,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2317:7:6",
+                  "src": "2317:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1487,13 +1487,13 @@
               },
               {
                 "constant": false,
-                "id": 6897,
+                "id": 6941,
                 "mutability": "mutable",
                 "name": "decimals",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2387:16:6",
+                "scope": 6960,
+                "src": "2387:16:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1501,10 +1501,10 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 6896,
+                  "id": 6940,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2387:7:6",
+                  "src": "2387:7:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -1515,13 +1515,13 @@
               },
               {
                 "constant": false,
-                "id": 6900,
+                "id": 6944,
                 "mutability": "mutable",
                 "name": "aTokenAddress",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2483:21:6",
+                "scope": 6960,
+                "src": "2483:21:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1529,10 +1529,10 @@
                   "typeString": "address"
                 },
                 "typeName": {
-                  "id": 6899,
+                  "id": 6943,
                   "name": "address",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2483:7:6",
+                  "src": "2483:7:7",
                   "stateMutability": "nonpayable",
                   "typeDescriptions": {
                     "typeIdentifier": "t_address",
@@ -1544,13 +1544,13 @@
               },
               {
                 "constant": false,
-                "id": 6903,
+                "id": 6947,
                 "mutability": "mutable",
                 "name": "interestRateStrategyAddress",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2586:35:6",
+                "scope": 6960,
+                "src": "2586:35:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1558,10 +1558,10 @@
                   "typeString": "address"
                 },
                 "typeName": {
-                  "id": 6902,
+                  "id": 6946,
                   "name": "address",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2586:7:6",
+                  "src": "2586:7:7",
                   "stateMutability": "nonpayable",
                   "typeDescriptions": {
                     "typeIdentifier": "t_address",
@@ -1573,13 +1573,13 @@
               },
               {
                 "constant": false,
-                "id": 6905,
+                "id": 6949,
                 "mutability": "mutable",
                 "name": "lastUpdateTimestamp",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2627:26:6",
+                "scope": 6960,
+                "src": "2627:26:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1587,10 +1587,10 @@
                   "typeString": "uint40"
                 },
                 "typeName": {
-                  "id": 6904,
+                  "id": 6948,
                   "name": "uint40",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2627:6:6",
+                  "src": "2627:6:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint40",
                     "typeString": "uint40"
@@ -1601,13 +1601,13 @@
               },
               {
                 "constant": false,
-                "id": 6907,
+                "id": 6951,
                 "mutability": "mutable",
                 "name": "borrowingEnabled",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2731:21:6",
+                "scope": 6960,
+                "src": "2731:21:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1615,10 +1615,10 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 6906,
+                  "id": 6950,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2731:4:6",
+                  "src": "2731:4:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bool",
                     "typeString": "bool"
@@ -1629,13 +1629,13 @@
               },
               {
                 "constant": false,
-                "id": 6909,
+                "id": 6953,
                 "mutability": "mutable",
                 "name": "usageAsCollateralEnabled",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2844:29:6",
+                "scope": 6960,
+                "src": "2844:29:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1643,10 +1643,10 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 6908,
+                  "id": 6952,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2844:4:6",
+                  "src": "2844:4:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bool",
                     "typeString": "bool"
@@ -1657,13 +1657,13 @@
               },
               {
                 "constant": false,
-                "id": 6911,
+                "id": 6955,
                 "mutability": "mutable",
                 "name": "isStableBorrowRateEnabled",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "2959:30:6",
+                "scope": 6960,
+                "src": "2959:30:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1671,10 +1671,10 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 6910,
+                  "id": 6954,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
-                  "src": "2959:4:6",
+                  "src": "2959:4:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bool",
                     "typeString": "bool"
@@ -1685,13 +1685,13 @@
               },
               {
                 "constant": false,
-                "id": 6913,
+                "id": 6957,
                 "mutability": "mutable",
                 "name": "isActive",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "3079:13:6",
+                "scope": 6960,
+                "src": "3079:13:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1699,10 +1699,10 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 6912,
+                  "id": 6956,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
-                  "src": "3079:4:6",
+                  "src": "3079:4:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bool",
                     "typeString": "bool"
@@ -1713,13 +1713,13 @@
               },
               {
                 "constant": false,
-                "id": 6915,
+                "id": 6959,
                 "mutability": "mutable",
                 "name": "isFreezed",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 6916,
-                "src": "3218:14:6",
+                "scope": 6960,
+                "src": "3218:14:7",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -1727,10 +1727,10 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 6914,
+                  "id": 6958,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
-                  "src": "3218:4:6",
+                  "src": "3218:4:7",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bool",
                     "typeString": "bool"
@@ -1742,16 +1742,16 @@
             ],
             "name": "ReserveData",
             "nodeType": "StructDefinition",
-            "scope": 6917,
-            "src": "1022:2215:6",
+            "scope": 6961,
+            "src": "1022:2215:7",
             "visibility": "public"
           }
         ],
-        "scope": 6918,
-        "src": "268:16911:6"
+        "scope": 6962,
+        "src": "268:16911:7"
       }
     ],
-    "src": "32:17148:6"
+    "src": "32:17148:7"
   },
   "compiler": {
     "name": "solc",
@@ -1759,7 +1759,7 @@
   },
   "networks": {},
   "schemaVersion": "3.2.5",
-  "updatedAt": "2020-09-26T14:06:13.815Z",
+  "updatedAt": "2020-10-19T09:46:50.311Z",
   "devdoc": {
     "author": "Aave",
     "kind": "dev",
