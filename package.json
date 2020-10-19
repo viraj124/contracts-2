@@ -1,7 +1,7 @@
 {
   "license": "MIT",
   "scripts": {
-    "prettier:solidity": "./node_modules/.bin/prettier --write contracts/**/*.sol"
+    "prettier:solidity": "./node_modules/.bin/prettier --write contracts/*.sol && ./node_modules/.bin/prettier --write contracts/**/*.sol"
   },
   "dependencies": {
     "@chainlink/contracts": "^0.0.10",
