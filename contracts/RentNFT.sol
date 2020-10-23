@@ -6,261 +6,206 @@ import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "./utils/ProxyFactory.sol";
-import "./utils/ContextUpgradeSafe.sol";
-import "./interfaces/ILendingPoolAddressProvider.sol";
-import "./interfaces/ILendingPoolCore.sol";
-import "./interfaces/ILendingPool.sol";
-import "./InterestCalculatorProxy.sol";
+import "./RentNftResolver.sol";
 
-contract RentNFT is ProxyFactory, ReentrancyGuard, Ownable {
+contract RentNft is ReentrancyGuard, Ownable {
   using SafeMath for uint256;
   using SafeERC20 for ERC20;
 
-  // ? we can move to renting in higher frequencies like minutes
-  // but then depositing with AAVE does not make sense
-  event ProductAdded(
+  // TODO: if thre are defaults, mark the address to forbid from renting
+
+  event Lent(
     address indexed nftAddress,
-    uint256 indexed nftId,
-    address indexed owner,
-    uint256 maxRentDuration,
-    uint256 dailyRentPrice,
-    uint256 nftPrice,
-    uint256 collateral
+    uint256 indexed tokenId,
+    address indexed lender,
+    uint256 maxDuration,
+    uint256 borrowPrice,
+    uint256 nftPrice
   );
-  event Rent(
+
+  event Borrowed(
     address indexed nftAddress,
-    uint256 indexed nftId,
+    uint256 indexed tokenId,
     address indexed borrower,
-    address owner,
+    address lender,
     uint256 borrowedAt,
-    uint256 dailyRentPrice,
-    uint256 actualRentDuration,
-    uint256 nftPrice,
-    uint256 collateral
+    uint256 borrowPrice,
+    uint256 actualDuration,
+    uint256 nftPrice
   );
-  event Return(
+
+  event Returned(
     address indexed nftAddress,
-    uint256 indexed nftId,
-    address borrower,
-    address owner
+    uint256 indexed tokenId,
+    address indexed borrower,
+    address lender
   );
 
-  struct Asset {
-    address owner;
+  struct Nft {
+    address lender;
     address borrower;
-    uint256 maxRentDuration; // in days
-    uint256 actualRentDuration; // actual duration lender rented out the NFT for
-    uint256 dailyRentPrice; // how much the lender has to pay irrevocably daily
-    uint256 borrowedAt; // borrowed time to be verifed by returning
-    uint256 nftPrice;
-    uint256 collateral;
+    uint256 maxDuration; // set by lender. max borrow duration in days
+    uint256 actualDuration; // set by borrower. actual duration borrower will have the NFT for
+    uint256 borrowPrice; // set by lender. how much the borrower has to pay irrevocably daily
+    uint256 borrowedAt; // set by borrower. borrowed time to be verifed by returning
+    uint256 nftPrice; // set by lender. how much lender will receive if borrower does not return in time
   }
 
-  // proxy details
-  // owner => borrower => proxy
-  mapping(address => mapping(address => address)) public proxyInfo;
-  address public proxyBaseAddress;
+  mapping(address => address) public ownerBorrower;
+  // nft address => token id => nft
+  mapping(address => mapping(uint256 => Nft)) public nfts;
 
-  // nft address => token id => asset info struct
-  mapping(address => mapping(uint256 => Asset)) public assets;
+  RentNftResolver public resolver;
 
-  // TODO: make setting of these addresses dynamic in constructor
-  // it will set automatically as per network the contract is deployed on
-  address public daiAddress = 0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD;
-  address public aDaiAddress = 0x58AD4cB396411B691A9AAb6F74545b2C5217FE6a;
-
-  ILendingPoolAddressesProvider public lendingPoolAddressProvider;
-  ILendingPool public lendingPool;
-  ILendingPoolCore public lendingPoolCore;
-
-  // provide aave address provider for the network you are working on
-  // get all aave related addresses through addressesProvider state var
-  // get all aToken reserve addresses through the core state var
-  constructor(address _proxyBaseAddress) public {
-    proxyBaseAddress = _proxyBaseAddress;
-    // do we need this at the moment  ?
-    lendingPoolAddressProvider = ILendingPoolAddressesProvider(
-      0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5
-    );
-    lendingPool = ILendingPool(lendingPoolAddressProvider.getLendingPool());
-    lendingPoolCore = ILendingPoolCore(
-      lendingPoolAddressProvider.getLendingPoolCore()
-    );
+  constructor(uint256 _networkId) public {
+    resolver = RentNftResolver(_networkId);
   }
 
-  // function to list the nft on the platform
-  // url will be the api endpoint to fetch nft price
-  function addProduct(
+  // lend one nft that you own to be borrowable on Rent NFT
+  function lendOne(
     address _nftAddress,
-    uint256 _nftId,
-    uint256 _maxRentDurationInDays,
-    uint256 _dailyRentPrice,
-    uint256 _nftPrice,
-    uint256 _collateral
-  ) external {
-    require(_nftAddress != address(0), "Invalid NFT Address");
+    uint256 _tokenId,
+    uint256 _maxDuration,
+    uint256 _borrowPrice,
+    uint256 _nftPrice
+  ) public nonReentrant {
+    require(_nftAddress != address(0), "invalid NFT address");
+    require(_maxDuration > 0, "at least one day");
 
-    assets[_nftAddress][_nftId] = Asset(
-      msg.sender, // owner
+    nfts[_nftAddress][_tokenId] = Nft(
+      msg.sender, // lender
       address(0), // borrower
-      _maxRentDurationInDays,
-      0, // actualRentDuration. This gets populated on the rent call
-      _dailyRentPrice,
-      0, // borrowedAt
-      _nftPrice,
-      _collateral
+      _maxDuration, // max rent duration
+      0, // actual rent duration. This gets populated on the rent call
+      _borrowPrice, // this is the daily borrow price
+      0, // time at which this is borrowed
+      _nftPrice // this is the collateral that gets sent to lender if borrower fails to return the NFT
     );
 
-    // transfer nft to this contract
-    ERC721(_nftAddress).transferFrom(msg.sender, address(this), _nftId);
-    emit ProductAdded(
+    // transfer nft to this contract. will fail if nft wasn't approved
+    ERC721(_nftAddress).transferFrom(msg.sender, address(this), _tokenId);
+    emit Lent(
       _nftAddress,
-      _nftId,
+      _tokenId,
       msg.sender,
-      _maxRentDurationInDays,
-      _dailyRentPrice,
-      _nftPrice,
-      _collateral
+      _maxDuration,
+      _borrowPrice,
+      _nftPrice
     );
   }
 
-  function rent(
+  // lend multiple nfts that you own to be borrowable by Rent NFT
+  // for gas saving
+  function lendMultiple(
+    address[] memory _nftAddresses,
+    uint256[] memory _tokenIds,
+    uint256[] memory _maxDurations,
+    uint256[] memory _borrowPrices,
+    uint256[] memory _nftPrices
+  ) external nonReentrant {
+    require(_nftAddresses.length == _tokenIds.length, "not equal length");
+    require(_tokenIds.length == _maxDurations.length, "not equal length");
+    require(_maxDurations.length == _borrowPrices.length, "not equal length");
+    require(_borrowPrices.length == _nftPrices.length, "not equal length");
+
+    for (uint256 i = 0; i < _nftAddresses.length; i++) {
+      lendOne(
+        _nftAddresses[0],
+        _tokenIds[0],
+        _maxDurations[0],
+        _borrowPrices[0],
+        _nftPrices[0]
+      );
+    }
+  }
+
+  function rentOne(
     address _borrower,
     address _nftAddress,
     uint256 _tokenId,
-    uint256 _actualRentDuration
-  ) external nonReentrant {
-    Asset storage nft = assets[_nftAddress][_tokenId];
+    uint256 _actualDuration
+  ) public nonReentrant {
+    Nft storage nft = nfts[_nftAddress][_tokenId];
 
-    require(_borrower != nft.owner, "can't rent own nft");
-    require(nft.maxRentDuration > 0, "could not find an NFT");
+    require(_borrower != nft.lender, "can't borrow own nft");
+    require(_borrower > address(0), "could not find an NFT");
 
-    createProxy(nft.owner, _borrower);
-
+    // ! will fail if wasn't approved
     // pay the NFT owner the rent price
-    uint256 rentPrice = _actualRentDuration.mul(nft.dailyRentPrice);
-    ERC20(daiAddress).safeTransferFrom(_borrower, nft.owner, rentPrice);
-
-    // ! will fail if the msg.sender hasn't approved us as the spender of their ERC20 tokens
-    transferToProxy(
-      daiAddress,
-      msg.sender,
-      nft.collateral,
-      proxyInfo[nft.owner][_borrower]
+    uint256 rentPrice = _actualDuration.mul(nft.borrowPrice);
+    ERC20(resolver.getDaiAddress()).safeTransferFrom(
+      _borrower,
+      nft.lender,
+      rentPrice
     );
-    // deposit to aave
-    InterestCalculatorProxy(proxyInfo[nft.owner][_borrower]).deposit(
-      daiAddress,
-      address(lendingPool),
-      address(lendingPoolCore),
-      address(this)
+    // collateral, our contracts acts as an escrow
+    ERC20(resolver.getDaiAddress()).safeTransferFrom(
+      _borrower,
+      address(this),
+      nft.nftPrice
     );
 
-    assets[_nftAddress][_tokenId].borrower = _borrower;
-    assets[_nftAddress][_tokenId].borrowedAt = now;
-    assets[_nftAddress][_tokenId].actualRentDuration = _actualRentDuration;
+    nfts[_nftAddress][_tokenId].borrower = _borrower;
+    nfts[_nftAddress][_tokenId].borrowedAt = now;
+    nfts[_nftAddress][_tokenId].actualDuration = _actualDuration;
 
-    ERC721(_nftAddress).transferFrom(address(this), _borrower, _tokenId);
-    emit Rent(
+    ERC721(_nftAddress).safeTransferFrom(address(this), _borrower, _tokenId);
+
+    emit Borrowed(
       _nftAddress,
       _tokenId,
       _borrower,
-      nft.owner,
+      nft.lender,
       nft.borrowedAt,
-      nft.dailyRentPrice,
-      nft.actualRentDuration,
-      nft.nftPrice,
-      nft.collateral
+      nft.borrowPrice,
+      nft.actualDuration,
+      nft.nftPrice
     );
   }
 
-  function returnNFT(address _nftAddress, uint256 _tokenId) external {
-    Asset storage nft = assets[_nftAddress][_tokenId];
+  function rentMultiple(
+    address _borrower,
+    address[] memory _nftAddresses,
+    uint256[] memory _tokenIds,
+    uint256[] memory _actualDurations
+  ) external nonReentrant {
+    for (uint256 i = 0; i < _nftAddresses.length; i++) {
+      rentOne(_borrower, _nftAddresses[0], _tokenIds[0], _actualDurations[0]);
+    }
+  }
 
-    require(nft.maxRentDuration > 0, "could not find an NFT");
+  function returnNftOne(address _nftAddress, uint256 _tokenId)
+    public
+    nonReentrant
+  {
+    Nft storage nft = nfts[_nftAddress][_tokenId];
+
     require(nft.borrower == msg.sender, "not borrower");
-    // TODO: make them pay daily penalty for every day that they are late to return the NFT
-    // TODO: compensate them if they return the NFT earlier
 
-    // redeem aDai to Dai in Proxy
-    uint256 daiReceived = InterestCalculatorProxy(
-      proxyInfo[nft.owner][msg.sender]
-    )
-      .withdraw(aDaiAddress, daiAddress);
+    // we are returning back to the contract so that the owner does not have to add
+    // it multiple times thus incurring the transaction costs
+    ERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
+    ERC20(resolver.getDaiAddress()).safeTransfer(nft.borrower, nft.nftPrice);
 
-    uint256 interest = daiReceived.sub(nft.collateral);
-
-    ERC721(_nftAddress).transferFrom(msg.sender, nft.owner, _tokenId);
-    ERC20(daiAddress).safeTransfer(nft.owner, interest);
-    ERC20(daiAddress).safeTransfer(nft.borrower, nft.collateral);
-
-    nft.actualRentDuration = 0;
-    emit Return(_nftAddress, _tokenId, msg.sender, nft.owner);
+    resetBorrow(nft);
+    emit Returned(_nftAddress, _tokenId, msg.sender, nft.borrower);
   }
 
-  // allow contract owner to withdraw collateral in case of a fraud. We resolve disputes to begin with
-  function redeemCollateral(address _nftAddress, uint256 _tokenId)
-    external
-    onlyOwner
-  {
-    Asset storage nft = assets[_nftAddress][_tokenId];
-
-    require(nft.maxRentDuration > 0, "could not find an NFT");
-
-    uint256 durationInDays = now
-      .sub(assets[_nftAddress][_tokenId].borrowedAt)
-      .div(86400);
-    require(durationInDays >= nft.actualRentDuration, "duration not exceeded");
-
-    // redeem aDai to Dai in Proxy
-    uint256 daiReceived = InterestCalculatorProxy(
-      proxyInfo[msg.sender][nft.borrower]
-    )
-      .withdraw(aDaiAddress, daiAddress);
-
-    // onlyOwner ensures that this will be sent to rentNFT contract
-    // we must control this contract to resolve the disputes
-    ERC20(daiAddress).safeTransfer(msg.sender, daiReceived);
+  function returnNftMultiple(
+    address[] memory _nftAddresses,
+    uint256[] memory _tokenIds
+  ) external nonReentrant {
+    for (uint256 i = 0; i < _nftAddresses.length; i++) {
+      returnNftOne(_nftAddresses[0], _tokenIds[0]);
+    }
   }
 
-  /**
-   * @dev transfers an amount from a user to the destination proxy address where it
-   * subsequently gets deposited into Aave
-   * @param _reserve the address of the reserve where the amount is being transferred
-   * @param _user the address of the user from where the transfer is happening
-   * @param _amount the amount being transferred
-   **/
-  function transferToProxy(
-    address _reserve,
-    address payable _user,
-    uint256 _amount,
-    address _proxy
-  ) private {
-    require(msg.value == 0, "don't send ETH");
-    // ! our contract should be approved to move his ERC20 funds
-    ERC20(_reserve).safeTransferFrom(_user, _proxy, _amount);
-  }
+  // TODO: onlyOwner method to be called every day at midnight to automatically
+  // default whoever has not returned the NFT in time
 
-  // create the proxy contract for managing interest when a borrower rents it out
-  function createProxy(address _owner, address _borrower) internal {
-    bytes memory _payload = abi.encodeWithSignature(
-      "initialize(address)",
-      _owner
-    );
-    // proxy is used for easy interest handling. Interest gets redirected to it
-    address _intermediate = deployMinimal(proxyBaseAddress, _payload);
-    // user address is just recorded for tracking the proxy for the particular pair
-    // TODO: need to test this for same owner but different user
-    proxyInfo[_owner][_borrower] = _intermediate;
-  }
-
-  // check whether the proxy contract exists or not for a owner-borrower pair
-  function getProxy(address _owner, address _borrower)
-    internal
-    view
-    returns (address)
-  {
-    return proxyInfo[_owner][_borrower];
+  function resetBorrow(Nft storage nft) internal {
+    nft.borrower = address(0);
+    nft.actualDuration = 0;
+    nft.borrowedAt = 0;
   }
 }
