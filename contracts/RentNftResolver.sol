@@ -8,13 +8,17 @@ contract RentNftResolver {
     networkId = _networkId;
   }
 
-  function getDaiAddress() public returns (address) {}
+  function getDai() public view returns (address) {
+    if (networkId == 5) {
+      return 0x88271d333C72e51516B67f5567c728E702b3eeE8;
+    }
+  }
 
-  function getUsdcAddress() public returns (address) {}
+  function getUsdc() public returns (address) {}
 
-  function getUsdtAddress() public returns (address) {}
+  function getUsdt() public returns (address) {}
 
-  function getPaxAddress() public returns (address) {}
+  function getPax() public returns (address) {}
 
-  function getBusdAddress() public returns (address) {}
+  function getBusd() public returns (address) {}
 }

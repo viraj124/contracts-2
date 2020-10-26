@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.0;
 
-import "../node_modules/@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
-import "../node_modules/@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "../node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+
 import "./RentNftResolver.sol";
 
 contract RentNft is ReentrancyGuard, Ownable {
@@ -133,13 +134,13 @@ contract RentNft is ReentrancyGuard, Ownable {
     // ! will fail if wasn't approved
     // pay the NFT owner the rent price
     uint256 rentPrice = _actualDuration.mul(nft.borrowPrice);
-    ERC20(resolver.getDaiAddress()).safeTransferFrom(
+    ERC20(resolver.getDai()).safeTransferFrom(
       _borrower,
       nft.lender,
       rentPrice
     );
     // collateral, our contracts acts as an escrow
-    ERC20(resolver.getDaiAddress()).safeTransferFrom(
+    ERC20(resolver.getDai()).safeTransferFrom(
       _borrower,
       address(this),
       nft.nftPrice
@@ -185,7 +186,7 @@ contract RentNft is ReentrancyGuard, Ownable {
     // we are returning back to the contract so that the owner does not have to add
     // it multiple times thus incurring the transaction costs
     ERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
-    ERC20(resolver.getDaiAddress()).safeTransfer(nft.borrower, nft.nftPrice);
+    ERC20(resolver.getDai()).safeTransfer(nft.borrower, nft.nftPrice);
 
     resetBorrow(nft);
     emit Returned(_nftAddress, _tokenId, msg.sender, nft.borrower);
