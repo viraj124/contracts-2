@@ -134,11 +134,7 @@ contract RentNft is ReentrancyGuard, Ownable {
     // ! will fail if wasn't approved
     // pay the NFT owner the rent price
     uint256 rentPrice = _actualDuration.mul(nft.borrowPrice);
-    ERC20(resolver.getDai()).safeTransferFrom(
-      _borrower,
-      nft.lender,
-      rentPrice
-    );
+    ERC20(resolver.getDai()).safeTransferFrom(_borrower, nft.lender, rentPrice);
     // collateral, our contracts acts as an escrow
     ERC20(resolver.getDai()).safeTransferFrom(
       _borrower,

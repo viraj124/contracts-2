@@ -21,8 +21,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "truffle compile",
-      "pre-push": "yarn prettier:solidity"
+      "pre-commit": "truffle compile && yarn prettier:solidity"
     }
   }
 }

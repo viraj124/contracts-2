@@ -16,12 +16,12 @@ contract GanFaceNft is ERC721, ReentrancyGuard {
     nonReentrant
     returns (uint256)
   {
-      __tokenIds.increment();
+    __tokenIds.increment();
 
-      uint256 newItemId = __tokenIds.current();
-      _mint(_minter, newItemId);
-      _setTokenURI(newItemId, _tokenURI);
+    uint256 newItemId = __tokenIds.current();
+    _mint(_minter, newItemId);
+    _setTokenURI(newItemId, _tokenURI);
 
-      return newItemId;
+    return newItemId;
   }
 }
