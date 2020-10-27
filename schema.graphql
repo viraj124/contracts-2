@@ -1,0 +1,19 @@
+type Nft @entity {
+  id: ID!
+  address: Bytes!
+  lender: Bytes!
+  borrower: Bytes!
+  maxDuration: BigInt!
+  actualDuration: BigInt!
+  borrowedAt: BigInt!
+  borrowPrice: BigInt!
+  nftPrice: BigInt!
+  faceUri: String!
+}
+
+type User @entity {
+  id: ID!
+  lending: [Nft!] 
+  borrowing: [Nft!]
+  faces: [BigInt!]
+}

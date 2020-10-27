@@ -1,0 +1,49 @@
+specVersion: 0.0.2
+description: Rent
+repository: https://github.com/nazariyv/contracts
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: RentNft
+    network: goerli
+    source:
+      address: '0xaABE247C8361791543861a606Ded8C3CCBCdE769'
+      abi: RentNft
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - RentNft
+        - GanFaceNft
+      abis:
+        - name: RentNft
+          file: ./build/contracts/RentNft.json
+      eventHandlers:
+        - event: Lent(indexed address,indexed uint256,indexed address,uint256,uint256,uint256)
+          handler: handleLent
+        - event: Borrowed(indexed address,indexed uint256,indexed address,address,uint256,uint256,uint256,uint256)
+          handler: handleBorrow
+        - event: Returned(indexed address,indexed uint256,indexed address,address)
+          handler: handleReturned
+      file: ./mapping.ts
+  - kind: ethereum/contract
+    name: GanFaceNft
+    network: goerli
+    source:
+      address: '0xbA77eA7547B4EFDD29a600762849fcD0Ed12fbB3'
+      abi: GanFaceNft
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - GanFaceNft
+      abis:
+        - name: GanFaceNft
+          file: ./build/contracts/GanFaceNft.json
+      eventHandlers:
+        - event: NewFace(indexed address,indexed uint256,string)
+          handler: handleNewFace
+      file: ./mapping.ts
