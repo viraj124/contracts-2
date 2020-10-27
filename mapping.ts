@@ -28,7 +28,10 @@ export function handleLent(event: Lent): void {
         lender.lending = new Array<string>();
         lender.borrowing = new Array<string>();
     }
-    lender.lending.push(nft.id);
+
+    let lending = lender.lending;
+    lending.push(nft.id);
+    lender.lending = lending;
 
     nft.save();
     lender.save();
@@ -48,6 +51,11 @@ export function handleBorrowed(event: Borrowed): void {
         borrower.lending = new Array<string>();
         borrower.borrowing = new Array<string>();
     }
+
+    let borrowing = borrower.borrowing;
+    borrowing.push(nft.id);
+    borrower.borrowing = borrowing;
+
     borrower.borrowing.push(nft.id);
 
     nft.save();
@@ -78,6 +86,9 @@ export function handleNewFace(event: NewFace): void {
         user.borrowing = new Array<string>();
         user.faces = new Array<string>();
     }
-    user.faces.push(face.id);
+    let faces = user.faces;
+    faces.push(face.id);
+    user.faces = faces;
+
     user.save();
 }
