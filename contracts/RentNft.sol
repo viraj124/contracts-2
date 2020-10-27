@@ -58,8 +58,8 @@ contract RentNft is ReentrancyGuard, Ownable {
 
   RentNftResolver public resolver;
 
-  constructor(uint256 _networkId) public {
-    resolver = RentNftResolver(_networkId);
+  constructor(address _resolverAddress) public {
+    resolver = RentNftResolver(_resolverAddress);
   }
 
   // lend one nft that you own to be borrowable on Rent NFT

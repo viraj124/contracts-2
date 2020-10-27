@@ -13,17 +13,20 @@
 const RentNft = artifacts.require("RentNft.sol");
 const GanFaceNft = artifacts.require("GanFaceNft.sol");
 const NILADDR = "0x0000000000000000000000000000000000000000";
+let rent;
+let face;
 
 contract("RentNft", (accounts) => {
   var creatorAddress = accounts[0];
   var firstOwnerAddress = accounts[1];
-  var secondOwnerAddress = accounts[2];
-  var externalAddress = accounts[3];
-  var unprivilegedAddress = accounts[4];
+  // var secondOwnerAddress = accounts[2];
+  // var externalAddress = accounts[3];
+  // var unprivilegedAddress = accounts[4];
   /* create named accounts for contract roles */
 
   before(async () => {
-    /* before tests */
+    rent = await RentNft.deployed();
+    face = await GanFaceNft.deployed();
   });
 
   beforeEach(async () => {
@@ -31,47 +34,27 @@ contract("RentNft", (accounts) => {
   });
 
   it("lends one", async () => {
-    const ganFace = await GanFaceNft.deployed();
-    const nftAddress = ganFace.address;
-    const rent = await RentNft.deployed();
-
     const fakeTokenURI = "https://fake.ipfs.image.link";
-    await ganFace.awardGanFace(creatorAddress, fakeTokenURI);
+    await face.awardGanFace(creatorAddress, fakeTokenURI);
 
     const tokenId = "1";
     const maxDuration = "5"; // means 5 days
     const borrowPrice = "1"; // daily DAI borrow price. i.e. 1 DAI per day
     const nftPrice = "100"; // this is the collateral
-    const newNftOwner = rent.address; // is our contract
-    await ganFace.approve.sendTransaction(newNftOwner, tokenId, { from: creatorAddress });
-    await rent.lendOne(nftAddress, tokenId, maxDuration, borrowPrice, nftPrice);
-    assert.strictEqual(await ganFace.ownerOf(tokenId), newNftOwner, "rent nft contract is not the new owner");
+    await face.approve(rent.address, tokenId, { from: creatorAddress });
+    await rent.lendOne(face.address, tokenId, maxDuration, borrowPrice, nftPrice);
+    assert.strictEqual(await face.ownerOf(tokenId), rent.address, "rent nft contract is not the new owner");
   });
 
   it("lends multiple", async () => {
-    const ganFace = await GanFaceNft.deployed();
-    const nftAddress = ganFace.address;
-    const rent = await RentNft.deployed();
-
     const fakeTokenURI = "https://fake.ipfs.image.link";
-    await ganFace.awardGanFace(firstOwnerAddress, fakeTokenURI);
-    await ganFace.awardGanFace(firstOwnerAddress, `${fakeTokenURI}.new.face`)
+    await face.awardGanFace(firstOwnerAddress, fakeTokenURI);
+    await face.awardGanFace(firstOwnerAddress, `${fakeTokenURI}.new.face`)
 
-    const newNftOwner = rent.address; // is our contract
-    // approves the rent nft contract to handle all of the token ids
-    await ganFace.setApprovalForAll.sendTransaction(newNftOwner, true, { from: firstOwnerAddress });
-    // await ganFace.approve(newNftOwner, "2", { from: firstOwnerAddress });
-    // await ganFace.approve(newNftOwner, "3", { from: firstOwnerAddress });
+    await face.setApprovalForAll(rent.address, true, { from: firstOwnerAddress });
 
-    // let owner = await ganFace.ownerOf("2");
-    // assert.strictEqual(owner, firstOwnerAddress, "incorrect owner");
-    // owner = await ganFace.ownerOf("3");
-    // assert.strictEqual(owner, firstOwnerAddress, "incorrect owner");
-
-    // await rent.lendOne(nftAddress, "2", "1", "10", "20", { from: firstOwnerAddress });
-    // await rent.lendOne(nftAddress, "3", "1", "10", "20", { from: firstOwnerAddress });
     await rent.lendMultiple(
-      [nftAddress, nftAddress],
+      [face.address, face.address],
       ["2", "3"], // tokenIds
       ["5", "10"], // maxDuration
       ["1", "2"], // daily borrow price
@@ -79,8 +62,8 @@ contract("RentNft", (accounts) => {
       { from: firstOwnerAddress }
     );
 
-    const nft2 = await rent.nfts(ganFace.address, "2");
-    const nft3 = await rent.nfts(ganFace.address, "3");
+    const nft2 = await rent.nfts(face.address, "2");
+    const nft3 = await rent.nfts(face.address, "3");
 
     assert.strictEqual(nft2.lender, firstOwnerAddress);
     assert.strictEqual(nft2.borrower, NILADDR);
@@ -97,6 +80,10 @@ contract("RentNft", (accounts) => {
     assert.strictEqual(nft3.nftPrice.toString(), "11");
     // assert.strictEqual(await ganFace.ownerOf("1"), newNftOwner, "rent nft contract is not the new owner");
     // assert.strictEqual(await ganFace.ownerOf("2"), newNftOwner, "rent nft contract is not the new owner");
+  });
+
+  it("rents one", async () => {
+
   });
   // it("should revert if ...", () => {
   //   return RentNft.deployed()
