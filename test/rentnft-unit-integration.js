@@ -10,115 +10,123 @@
  *
  * for all tests
  * */
-const RentNft = artifacts.require("RentNft.sol");
-const GanFaceNft = artifacts.require("GanFaceNft.sol");
+const RentNft = artifacts.require("RentNft");
+const GanFaceNft = artifacts.require("GanFaceNft");
+const PaymentToken = artifacts.require("PaymentToken");
+
 const NILADDR = "0x0000000000000000000000000000000000000000";
+const INITBALANCE = "1000";
+const UNLIMITED_ALLOWANCE = "10000000000000000000000000000000000000000000000000000"
+
+let dai;
 let rent;
 let face;
 
+const BORROW_PRICE = "1";
+const MAX_DURATION = "5";
+const NFT_PRICE = "11";
+
 contract("RentNft", (accounts) => {
-  var creatorAddress = accounts[0];
-  var firstOwnerAddress = accounts[1];
-  // var secondOwnerAddress = accounts[2];
-  // var externalAddress = accounts[3];
-  // var unprivilegedAddress = accounts[4];
+  const creatorAddress = accounts[0];
+  const firstOwnerAddress = accounts[1];
+  const secondOwnerAddress = accounts[2];
+  // const externalAddress = accounts[3];
+  const unprivilegedAddress = accounts[4];
   /* create named accounts for contract roles */
 
   before(async () => {
+    // waiting for the deployed contracts
     rent = await RentNft.deployed();
     face = await GanFaceNft.deployed();
+    dai = await PaymentToken.deployed();
+
+    // approvals for NFT and DAI handling by the rent contract
+    await face.setApprovalForAll(rent.address, true, { from: firstOwnerAddress });
+    await face.setApprovalForAll(rent.address, true, { from: secondOwnerAddress });
+    await face.setApprovalForAll(rent.address, true, { from: creatorAddress });
+    await dai.approve(rent.address, UNLIMITED_ALLOWANCE, { from: firstOwnerAddress });
+    await dai.approve(rent.address, UNLIMITED_ALLOWANCE, { from: secondOwnerAddress });
+    await dai.approve(rent.address, UNLIMITED_ALLOWANCE, { from: unprivilegedAddress });
+    await dai.approve(rent.address, UNLIMITED_ALLOWANCE, { from: creatorAddress });
+
+    // giving the lenders and borrowers some DAI
+    dai.transfer(firstOwnerAddress, INITBALANCE);
+    dai.transfer(secondOwnerAddress, INITBALANCE);
+    dai.transfer(unprivilegedAddress, INITBALANCE);
   });
 
-  beforeEach(async () => {
+  // beforeEach(async () => {
     /* before each context */
-  });
+  // });
 
   it("lends one", async () => {
     const fakeTokenURI = "https://fake.ipfs.image.link";
-    await face.awardGanFace(creatorAddress, fakeTokenURI);
+    await face.awardGanFace(firstOwnerAddress, fakeTokenURI);
 
     const tokenId = "1";
-    const maxDuration = "5"; // means 5 days
-    const borrowPrice = "1"; // daily DAI borrow price. i.e. 1 DAI per day
-    const nftPrice = "100"; // this is the collateral
-    await face.approve(rent.address, tokenId, { from: creatorAddress });
-    await rent.lendOne(face.address, tokenId, maxDuration, borrowPrice, nftPrice);
+    await face.approve(rent.address, tokenId, { from: firstOwnerAddress });
+    await rent.lendOne(face.address, tokenId, MAX_DURATION, BORROW_PRICE, NFT_PRICE, { from: firstOwnerAddress });
     assert.strictEqual(await face.ownerOf(tokenId), rent.address, "rent nft contract is not the new owner");
+  });
+
+  it("rents one", async () => {
+    let daiBalanceRent = await dai.balanceOf(rent.address);
+    assert.strictEqual(daiBalanceRent.toString(), "0");
+    let daiBalanceFOA = await dai.balanceOf(firstOwnerAddress);
+    assert.strictEqual(daiBalanceFOA.toString(), INITBALANCE);
+    let daiBalanceUA = await dai.balanceOf(unprivilegedAddress);
+    assert.strictEqual(daiBalanceUA.toString(), INITBALANCE);
+
+    // unprivilidged account now rents the NFT
+    const rentDuration = "2"; // 2 days
+    const receipt = await rent.rentOne(unprivilegedAddress, face.address, "1", rentDuration);
+
+    const nft = await rent.nfts(face.address, "1");
+
+    assert.strictEqual(nft.lender, firstOwnerAddress);
+    assert.strictEqual(nft.borrower, unprivilegedAddress);
+    assert.strictEqual(nft.maxDuration.toString(), MAX_DURATION);
+    assert.strictEqual(nft.actualDuration.toString(), rentDuration);
+    assert.strictEqual(nft.borrowPrice.toString(), BORROW_PRICE);
+    assert.strictEqual(nft.nftPrice.toString(), NFT_PRICE);
+
+    daiBalanceRent = await dai.balanceOf(rent.address);
+    assert.strictEqual(daiBalanceRent.toString(), NFT_PRICE);
+    daiBalanceFOA = await dai.balanceOf(firstOwnerAddress);
+    // initial 1000 + 1 DAI * 2 days = 1002 DAI
+    assert.strictEqual(daiBalanceFOA.toString(), "1002");
+    // - (1 DAI * 2 days) - 11 DAI (collateral) = 998 - 11 = 987
+    daiBalanceUA = await dai.balanceOf(unprivilegedAddress);
+    assert.strictEqual(daiBalanceUA.toString(), "987");
   });
 
   it("lends multiple", async () => {
     const fakeTokenURI = "https://fake.ipfs.image.link";
-    await face.awardGanFace(firstOwnerAddress, fakeTokenURI);
-    await face.awardGanFace(firstOwnerAddress, `${fakeTokenURI}.new.face`)
-
-    await face.setApprovalForAll(rent.address, true, { from: firstOwnerAddress });
-
+    await face.awardGanFace(secondOwnerAddress, fakeTokenURI);
+    await face.awardGanFace(secondOwnerAddress, `${fakeTokenURI}.new.face`)
     await rent.lendMultiple(
       [face.address, face.address],
       ["2", "3"], // tokenIds
       ["5", "10"], // maxDuration
       ["1", "2"], // daily borrow price
       ["10", "11"], // collateral
-      { from: firstOwnerAddress }
+      { from: secondOwnerAddress }
     );
-
     const nft2 = await rent.nfts(face.address, "2");
     const nft3 = await rent.nfts(face.address, "3");
 
-    assert.strictEqual(nft2.lender, firstOwnerAddress);
+    assert.strictEqual(nft2.lender, secondOwnerAddress);
     assert.strictEqual(nft2.borrower, NILADDR);
     assert.strictEqual(nft2.maxDuration.toString(), "5");
     assert.strictEqual(nft2.actualDuration.toString(), "0");
     assert.strictEqual(nft2.borrowPrice.toString(), "1");
     assert.strictEqual(nft2.nftPrice.toString(), "10");
 
-    assert.strictEqual(nft3.lender, firstOwnerAddress);
+    assert.strictEqual(nft3.lender, secondOwnerAddress);
     assert.strictEqual(nft3.borrower, NILADDR);
     assert.strictEqual(nft3.maxDuration.toString(), "10");
     assert.strictEqual(nft3.actualDuration.toString(), "0");
     assert.strictEqual(nft3.borrowPrice.toString(), "2");
     assert.strictEqual(nft3.nftPrice.toString(), "11");
-    // assert.strictEqual(await ganFace.ownerOf("1"), newNftOwner, "rent nft contract is not the new owner");
-    // assert.strictEqual(await ganFace.ownerOf("2"), newNftOwner, "rent nft contract is not the new owner");
   });
-
-  it("rents one", async () => {
-
-  });
-  // it("should revert if ...", () => {
-  //   return RentNft.deployed()
-  //     .then((instance) => {
-  //       return instance.publicOrExternalContractMethod(argument1, argument2, {
-  //         from: externalAddress
-  //       });
-  //     })
-  //     .then((result) => {
-  //       assert.fail();
-  //     })
-  //     .catch((error) => {
-  //       assert.notEqual(error.message, "assert.fail()", "Reason ...");
-  //     });
-  // });
-
-  // context("testgroup - security tests - description...", () => {
-  //   //deploy a new contract
-  //   before(async () => {
-  //     /* before tests */
-  //     const newRentNft = await RentNft.new("5");
-  //   });
-
-  //   beforeEach(async () => {
-  //     /* before each tests */
-  //   });
-
-  //   it("fails on initialize ...", async () => {
-  //     return assertRevert(async () => {
-  //       await newRentNft.initialize();
-  //     });
-  //   });
-
-  //   it("checks if method returns true", async () => {
-  //     assert.isTrue(await newRentNft.thisMethodShouldReturnTrue());
-  //   });
-  // });
 });

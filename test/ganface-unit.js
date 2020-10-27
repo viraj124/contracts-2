@@ -7,11 +7,11 @@
  *  #> truffle test <path/to/this/test.js>
  * 
  * */
-const GanFaceNft = artifacts.require("/home/shredder/git/superfluid/contracts/contracts/GanFaceNft.sol");
+const GanFaceNft = artifacts.require("GanFaceNft");
 
 contract('GanFaceNft', (accounts) => {
-    var creatorAddress = accounts[0];
-    var firstOwnerAddress = accounts[1];
+    const creatorAddress = accounts[0];
+    const firstOwnerAddress = accounts[1];
     // var secondOwnerAddress = accounts[2];
     // var externalAddress = accounts[3];
     // var unprivilegedAddress = accounts[4]
