@@ -52,7 +52,7 @@ contract RentNft is ReentrancyGuard, Ownable {
     uint256 nftPrice; // set by lender. how much lender will receive if borrower does not return in time
   }
 
-  mapping(address => address) public ownerBorrower;
+  // mapping(address => address) public ownerBorrower;
   // nft address => token id => nft
   mapping(address => mapping(uint256 => Nft)) public nfts;
 
@@ -103,7 +103,7 @@ contract RentNft is ReentrancyGuard, Ownable {
     uint256[] memory _maxDurations,
     uint256[] memory _borrowPrices,
     uint256[] memory _nftPrices
-  ) external nonReentrant {
+  ) external { // ! TODO: needed to remove nonReentrant for tests?
     require(_nftAddresses.length == _tokenIds.length, "not equal length");
     require(_tokenIds.length == _maxDurations.length, "not equal length");
     require(_maxDurations.length == _borrowPrices.length, "not equal length");
@@ -111,11 +111,11 @@ contract RentNft is ReentrancyGuard, Ownable {
 
     for (uint256 i = 0; i < _nftAddresses.length; i++) {
       lendOne(
-        _nftAddresses[0],
-        _tokenIds[0],
-        _maxDurations[0],
-        _borrowPrices[0],
-        _nftPrices[0]
+        _nftAddresses[i],
+        _tokenIds[i],
+        _maxDurations[i],
+        _borrowPrices[i],
+        _nftPrices[i]
       );
     }
   }
@@ -167,7 +167,7 @@ contract RentNft is ReentrancyGuard, Ownable {
     uint256[] memory _actualDurations
   ) external nonReentrant {
     for (uint256 i = 0; i < _nftAddresses.length; i++) {
-      rentOne(_borrower, _nftAddresses[0], _tokenIds[0], _actualDurations[0]);
+      rentOne(_borrower, _nftAddresses[i], _tokenIds[i], _actualDurations[0]);
     }
   }
 
@@ -193,7 +193,7 @@ contract RentNft is ReentrancyGuard, Ownable {
     uint256[] memory _tokenIds
   ) external nonReentrant {
     for (uint256 i = 0; i < _nftAddresses.length; i++) {
-      returnNftOne(_nftAddresses[0], _tokenIds[0]);
+      returnNftOne(_nftAddresses[i], _tokenIds[i]);
     }
   }
 
