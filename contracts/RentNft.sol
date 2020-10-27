@@ -95,6 +95,7 @@ contract RentNft is ReentrancyGuard, Ownable {
     );
   }
 
+  // ! TODO: reentrancy danger since this calls lendOne
   // lend multiple nfts that you own to be borrowable by Rent NFT
   // for gas saving
   function lendMultiple(
@@ -103,7 +104,8 @@ contract RentNft is ReentrancyGuard, Ownable {
     uint256[] memory _maxDurations,
     uint256[] memory _borrowPrices,
     uint256[] memory _nftPrices
-  ) external { // ! TODO: needed to remove nonReentrant for tests?
+  ) external {
+    // ! TODO: needed to remove nonReentrant for tests?
     require(_nftAddresses.length == _tokenIds.length, "not equal length");
     require(_tokenIds.length == _maxDurations.length, "not equal length");
     require(_maxDurations.length == _borrowPrices.length, "not equal length");
