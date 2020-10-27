@@ -14,5 +14,15 @@ module.exports = async (_deployer, _network) => {
             NILADDR,
             NILADDR
         );
+    } else if (_network === "goerli") {
+        await _deployer.deploy(
+            RentNftResolver,
+            "5",
+            NILADDR,
+            NILADDR,
+            NILADDR,
+            NILADDR,
+            NILADDR
+        );
     }
 };
