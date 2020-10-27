@@ -10,6 +10,7 @@ dataSources:
     source:
       address: '0xaABE247C8361791543861a606Ded8C3CCBCdE769'
       abi: RentNft
+      startBlock: 3649499
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
@@ -34,6 +35,7 @@ dataSources:
     source:
       address: '0xbA77eA7547B4EFDD29a600762849fcD0Ed12fbB3'
       abi: GanFaceNft
+      startBlock: 3649499
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4

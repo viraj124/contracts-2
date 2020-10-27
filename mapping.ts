@@ -7,7 +7,7 @@ import {
 import {
     NewFace
 } from "./generated/GanFaceNft/GanFaceNft"
-import { Nft, User } from "./generated/schema"
+import { Face, Nft, User } from "./generated/schema"
 
 export function handleLent(event: Lent): void {
     const id = event.params.tokenId;
@@ -27,10 +27,8 @@ export function handleLent(event: Lent): void {
         lender = new User(event.params.lender.toHex());
         lender.lending = new Array<string>();
         lender.borrowing = new Array<string>();
-        lender.faces = new Array<BigInt>();
     }
     lender.lending.push(nft.id);
-    lender.faces.push(id);
 
     nft.save();
     lender.save();
@@ -49,7 +47,6 @@ export function handleBorrowed(event: Borrowed): void {
         borrower = new User(event.params.borrower.toHex());
         borrower.lending = new Array<string>();
         borrower.borrowing = new Array<string>();
-        borrower.faces = new Array<BigInt>();
     }
     borrower.borrowing.push(nft.id);
 
@@ -70,19 +67,17 @@ export function handleReturned(event: Returned): void {
 
 export function handleNewFace(event: NewFace): void {
     const id = event.params.tokenId;
-    const nft = Nft.load(id.toHex());
-
-    nft.faceUri = event.params.tokenURI;
+    const face = new Face(id.toHex());
+    face.uri = event.params.tokenURI;
+    face.save();
 
     let user = User.load(event.params.owner.toHex());
     if (user == null) {
         user = new User(event.params.owner.toHex());
         user.lending = new Array<string>();
         user.borrowing = new Array<string>();
-        user.faces = new Array<BigInt>();
+        user.faces = new Array<string>();
     }
-    user.faces.push(id);
-
-    nft.save();
+    user.faces.push(face.id);
     user.save();
 }

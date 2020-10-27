@@ -1,3 +1,8 @@
+type Face @entity {
+  id: ID!
+  uri: String!
+}
+
 type Nft @entity {
   id: ID!
   address: Bytes!
@@ -8,12 +13,12 @@ type Nft @entity {
   borrowedAt: BigInt!
   borrowPrice: BigInt!
   nftPrice: BigInt!
-  faceUri: String!
+  face: Face!
 }
 
 type User @entity {
   id: ID!
   lending: [Nft!] 
   borrowing: [Nft!]
-  faces: [BigInt!]
+  faces: [Face!]
 }
