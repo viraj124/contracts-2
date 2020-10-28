@@ -1,4 +1,4 @@
-import {BigInt, Bytes} from "@graphprotocol/graph-ts";
+import {BigInt} from "@graphprotocol/graph-ts";
 import {Lent, Borrowed, Returned} from "./generated/RentNft/RentNft";
 import {NewFace} from "./generated/GanFaceNft/GanFaceNft";
 import {Face, Nft, User} from "./generated/schema";
