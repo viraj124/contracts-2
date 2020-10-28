@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 import "./RentNftResolver.sol";
 
-contract RentNft is ReentrancyGuard, Ownable {
+contract RentNft is Initializable, ReentrancyGuardUpgradeSafe, OwnableUpgradeSafe {
   using SafeMath for uint256;
   using SafeERC20 for ERC20;
 
-  // TODO: if thre are defaults, mark the address to forbid from renting
+  // TODO: if there are defaults, mark the address to forbid from renting
 
   event Lent(
     address indexed nftAddress,
@@ -58,7 +59,7 @@ contract RentNft is ReentrancyGuard, Ownable {
 
   RentNftResolver public resolver;
 
-  constructor(address _resolverAddress) public {
+  function initialize(address _resolverAddress) initializer public {
     resolver = RentNftResolver(_resolverAddress);
   }
 
