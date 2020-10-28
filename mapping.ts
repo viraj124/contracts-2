@@ -1,7 +1,17 @@
 import {BigInt} from "@graphprotocol/graph-ts";
 import {Lent, Borrowed, Returned} from "./generated/RentNft/RentNft";
-import {NewFace} from "./generated/GanFaceNft/GanFaceNft";
-import {Face, Nft, User} from "./generated/schema";
+import {
+  NewFace,
+  Approval as ApprovalEvent,
+  ApprovalForAll
+} from "./generated/GanFaceNft/GanFaceNft";
+import {
+  Face,
+  Nft,
+  User,
+  Approval as ApprovalSchema,
+  ApprovedAll
+} from "./generated/schema";
 
 export function handleLent(event: Lent): void {
   const id = event.params.tokenId;
@@ -22,6 +32,8 @@ export function handleLent(event: Lent): void {
     lender = new User(event.params.lender.toHex());
     lender.lending = new Array<string>();
     lender.borrowing = new Array<string>();
+    lender.approvals = new Array<string>();
+    lender.approvedAll = new Array<string>();
   }
 
   let lending = lender.lending;
@@ -45,6 +57,8 @@ export function handleBorrowed(event: Borrowed): void {
     borrower = new User(event.params.borrower.toHex());
     borrower.lending = new Array<string>();
     borrower.borrowing = new Array<string>();
+    borrower.approvals = new Array<string>();
+    borrower.approvedAll = new Array<string>();
   }
 
   let borrowing = borrower.borrowing;
@@ -68,6 +82,7 @@ export function handleReturned(event: Returned): void {
   nft.save();
 }
 
+// gan face contract
 export function handleNewFace(event: NewFace): void {
   const id = event.params.tokenId;
   const face = new Face(id.toHex());
@@ -80,10 +95,67 @@ export function handleNewFace(event: NewFace): void {
     user.lending = new Array<string>();
     user.borrowing = new Array<string>();
     user.faces = new Array<string>();
+    user.approvals = new Array<string>();
+    user.approvedAll = new Array<string>();
   }
   let faces = user.faces;
   faces.push(face.id);
   user.faces = faces;
+
+  user.save();
+}
+
+export function handleApproval(event: ApprovalEvent): void {
+  const nftOwner = event.params.owner;
+  const approved = event.params.approved;
+  const tokenId = event.params.tokenId;
+
+  const id = nftOwner.toHex().concat(approved.toHex()).concat(tokenId.toHex());
+  const approval = new ApprovalSchema(id);
+
+  approval.owner = nftOwner;
+  approval.approved = approved;
+  approval.tokenId = tokenId;
+  approval.save();
+
+  // now update the user if exists. If not, create them
+  let user = User.load(nftOwner.toHex());
+  if (user == null) {
+    user = new User(nftOwner.toHex());
+    user.lending = new Array<string>();
+    user.borrowing = new Array<string>();
+    user.faces = new Array<string>();
+    user.approvals = new Array<string>();
+    user.approvedAll = new Array<string>();
+  }
+
+  user.approvals.push(approval.id);
+  user.save();
+}
+
+export function handleApprovalForAll(event: ApprovalForAll): void {
+  const nftOwner = event.params.owner;
+  const approved = event.params.operator;
+
+  const id = nftOwner.toHex().concat(approved.toHex());
+
+  const approvedAll = new ApprovedAll(id);
+  approvedAll.owner = nftOwner;
+  approvedAll.approved = approved;
+
+  approvedAll.save();
+
+  let user = User.load(nftOwner.toHex());
+  if (user == null) {
+    user = new User(nftOwner.toHex());
+    user.lending = new Array<string>();
+    user.borrowing = new Array<string>();
+    user.faces = new Array<string>();
+    user.approvals = new Array<string>();
+    user.approvedAll = new Array<string>();
+  }
+
+  user.approvedAll.push(approvedAll.id);
 
   user.save();
 }

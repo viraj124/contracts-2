@@ -7,13 +7,26 @@ type Nft @entity {
   id: ID!
   address: Bytes!
   lender: Bytes!
-  borrower: Bytes!
+  borrower: Bytes
   maxDuration: BigInt!
-  actualDuration: BigInt!
-  borrowedAt: BigInt!
+  actualDuration: BigInt
+  borrowedAt: BigInt
   borrowPrice: BigInt!
   nftPrice: BigInt!
   face: Face!
+}
+
+type Approval @entity {
+  id: ID!
+  owner: Bytes!
+  approved: Bytes!
+  tokenId: BigInt!
+}
+
+type ApprovedAll @entity {
+  id: ID!
+  owner: Bytes!
+  approved: Bytes!
 }
 
 type User @entity {
@@ -21,4 +34,6 @@ type User @entity {
   lending: [Nft!] 
   borrowing: [Nft!]
   faces: [Face!]
+  approvals: [Approval!]
+  approvedAll: [ApprovedAll!]
 }
