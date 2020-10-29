@@ -183,11 +183,17 @@ contract RentNft is ReentrancyGuard, Ownable {
 
     // we are returning back to the contract so that the owner does not have to add
     // it multiple times thus incurring the transaction costs
-    ERC721(_nftAddress).safeTransferFrom(msg.sender, nft.lender, _tokenId);
+    ERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
     ERC20(resolver.getDai()).safeTransfer(nft.borrower, nft.nftPrice);
 
     resetBorrow(nft);
     emit Returned(_nftAddress, _tokenId, msg.sender, nft.borrower);
+  }
+
+  function transferOwnership(address _nftAddress, uint256 _tokenId) public {
+    Nft storage nft = nfts[_nftAddress][_tokenId];
+    require(nft.lender == msg.sender, "not lender");
+    ERC721(_nftAddress).safeTransferFrom(address(this), nft.lender, _tokenId);
   }
 
   function returnNftMultiple(
