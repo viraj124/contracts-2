@@ -190,12 +190,6 @@ contract RentNft is ReentrancyGuard, Ownable {
     emit Returned(_nftAddress, _tokenId, msg.sender, nft.borrower);
   }
 
-  function transferOwnership(address _nftAddress, uint256 _tokenId) public {
-    Nft storage nft = nfts[_nftAddress][_tokenId];
-    require(nft.lender == msg.sender, "not lender");
-    ERC721(_nftAddress).safeTransferFrom(address(this), nft.lender, _tokenId);
-  }
-
   function returnNftMultiple(
     address[] memory _nftAddresses,
     uint256[] memory _tokenIds
@@ -203,6 +197,12 @@ contract RentNft is ReentrancyGuard, Ownable {
     for (uint256 i = 0; i < _nftAddresses.length; i++) {
       returnNftOne(_nftAddresses[i], _tokenIds[i]);
     }
+  }
+
+  function stopLending(address _nftAddress, uint256 _tokenId) public {
+    Nft storage nft = nfts[_nftAddress][_tokenId];
+    require(nft.lender == msg.sender, "not lender");
+    ERC721(_nftAddress).safeTransferFrom(address(this), nft.lender, _tokenId);
   }
 
   // TODO: onlyOwner method to be called every day at midnight to automatically
