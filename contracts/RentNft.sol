@@ -180,6 +180,8 @@ contract RentNft is ReentrancyGuard, Ownable {
     Nft storage nft = nfts[_nftAddress][_tokenId];
 
     require(nft.borrower == msg.sender, "not borrower");
+    uint256 durationInDays = now.sub(nft.borrowedAt).div(86400);
+    require(durationInDays < nft.actualDuration, "duration exceeded");
 
     // we are returning back to the contract so that the owner does not have to add
     // it multiple times thus incurring the transaction costs
@@ -207,6 +209,20 @@ contract RentNft is ReentrancyGuard, Ownable {
 
   // TODO: onlyOwner method to be called every day at midnight to automatically
   // default whoever has not returned the NFT in time
+  function claimCollateral(address _nftAddress, uint256 _tokenId)
+    public
+    nonReentrant
+  {
+    Nft storage nft = nfts[_nftAddress][_tokenId];
+    require(nft.lender == msg.sender, "not lender");
+    require(nft.borrower != address(0), "nft not lent out");
+
+    uint256 durationInDays = now.sub(nft.borrowedAt).div(86400);
+    require(durationInDays >= nft.actualDuration, "duration not exceeded");
+
+    resetBorrow(nft);
+    ERC20(resolver.getDai()).safeTransfer(msg.sender, nft.nftPrice);
+  }
 
   function resetBorrow(Nft storage nft) internal {
     nft.borrower = address(0);
