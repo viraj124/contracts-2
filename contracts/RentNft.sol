@@ -216,6 +216,12 @@ contract RentNft is ReentrancyGuard, Ownable {
     ERC20(resolver.getDai()).safeTransfer(msg.sender, nft.nftPrice);
   }
 
+  function stopLending(address _nftAddress, uint256 _tokenId) public {
+    Nft storage nft = nfts[_nftAddress][_tokenId];
+    require(nft.lender == msg.sender, "not lender");
+    ERC721(_nftAddress).safeTransferFrom(address(this), nft.lender, _tokenId);
+  }
+
   function resetBorrow(Nft storage nft) internal {
     nft.borrower = address(0);
     nft.actualDuration = 0;
