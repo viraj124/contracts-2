@@ -199,6 +199,12 @@ contract RentNft is ReentrancyGuard, Ownable {
     }
   }
 
+  function stopLending(address _nftAddress, uint256 _tokenId) public {
+    Nft storage nft = nfts[_nftAddress][_tokenId];
+    require(nft.lender == msg.sender, "not lender");
+    ERC721(_nftAddress).safeTransferFrom(address(this), nft.lender, _tokenId);
+  }
+
   // TODO: onlyOwner method to be called every day at midnight to automatically
   // default whoever has not returned the NFT in time
 
