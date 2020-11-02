@@ -16,7 +16,8 @@ const PaymentToken = artifacts.require("PaymentToken");
 
 const NILADDR = "0x0000000000000000000000000000000000000000";
 const INITBALANCE = "1000";
-const UNLIMITED_ALLOWANCE = "10000000000000000000000000000000000000000000000000000"
+const UNLIMITED_ALLOWANCE =
+  "10000000000000000000000000000000000000000000000000000";
 
 let dai;
 let rent;
@@ -27,6 +28,7 @@ const MAX_DURATION = "5";
 const NFT_PRICE = "11";
 
 contract("RentNft", (accounts) => {
+  // ! you must have at least 5 accounts on your local development chain
   const creatorAddress = accounts[0];
   const firstOwnerAddress = accounts[1];
   const secondOwnerAddress = accounts[2];
@@ -41,13 +43,23 @@ contract("RentNft", (accounts) => {
     dai = await PaymentToken.deployed();
 
     // approvals for NFT and DAI handling by the rent contract
-    await face.setApprovalForAll(rent.address, true, { from: firstOwnerAddress });
-    await face.setApprovalForAll(rent.address, true, { from: secondOwnerAddress });
-    await face.setApprovalForAll(rent.address, true, { from: creatorAddress });
-    await dai.approve(rent.address, UNLIMITED_ALLOWANCE, { from: firstOwnerAddress });
-    await dai.approve(rent.address, UNLIMITED_ALLOWANCE, { from: secondOwnerAddress });
-    await dai.approve(rent.address, UNLIMITED_ALLOWANCE, { from: unprivilegedAddress });
-    await dai.approve(rent.address, UNLIMITED_ALLOWANCE, { from: creatorAddress });
+    await face.setApprovalForAll(rent.address, true, {from: firstOwnerAddress});
+    await face.setApprovalForAll(rent.address, true, {
+      from: secondOwnerAddress
+    });
+    await face.setApprovalForAll(rent.address, true, {from: creatorAddress});
+    await dai.approve(rent.address, UNLIMITED_ALLOWANCE, {
+      from: firstOwnerAddress
+    });
+    await dai.approve(rent.address, UNLIMITED_ALLOWANCE, {
+      from: secondOwnerAddress
+    });
+    await dai.approve(rent.address, UNLIMITED_ALLOWANCE, {
+      from: unprivilegedAddress
+    });
+    await dai.approve(rent.address, UNLIMITED_ALLOWANCE, {
+      from: creatorAddress
+    });
 
     // giving the lenders and borrowers some DAI
     dai.transfer(firstOwnerAddress, INITBALANCE);
@@ -56,7 +68,7 @@ contract("RentNft", (accounts) => {
   });
 
   // beforeEach(async () => {
-    /* before each context */
+  /* before each context */
   // });
 
   it("lends one", async () => {
@@ -64,9 +76,20 @@ contract("RentNft", (accounts) => {
     await face.awardGanFace(firstOwnerAddress, fakeTokenURI);
 
     const tokenId = "1";
-    await face.approve(rent.address, tokenId, { from: firstOwnerAddress });
-    await rent.lendOne(face.address, tokenId, MAX_DURATION, BORROW_PRICE, NFT_PRICE, { from: firstOwnerAddress });
-    assert.strictEqual(await face.ownerOf(tokenId), rent.address, "rent nft contract is not the new owner");
+    await face.approve(rent.address, tokenId, {from: firstOwnerAddress});
+    await rent.lendOne(
+      face.address,
+      tokenId,
+      MAX_DURATION,
+      BORROW_PRICE,
+      NFT_PRICE,
+      {from: firstOwnerAddress}
+    );
+    assert.strictEqual(
+      await face.ownerOf(tokenId),
+      rent.address,
+      "rent nft contract is not the new owner"
+    );
   });
 
   it("rents one", async () => {
@@ -79,7 +102,12 @@ contract("RentNft", (accounts) => {
 
     // unprivilidged account now rents the NFT
     const rentDuration = "2"; // 2 days
-    const receipt = await rent.rentOne(unprivilegedAddress, face.address, "1", rentDuration);
+    const receipt = await rent.rentOne(
+      unprivilegedAddress,
+      face.address,
+      "1",
+      rentDuration
+    );
 
     const nft = await rent.nfts(face.address, "1");
 
@@ -103,14 +131,14 @@ contract("RentNft", (accounts) => {
   it("lends multiple", async () => {
     const fakeTokenURI = "https://fake.ipfs.image.link";
     await face.awardGanFace(secondOwnerAddress, fakeTokenURI);
-    await face.awardGanFace(secondOwnerAddress, `${fakeTokenURI}.new.face`)
+    await face.awardGanFace(secondOwnerAddress, `${fakeTokenURI}.new.face`);
     await rent.lendMultiple(
       [face.address, face.address],
       ["2", "3"], // tokenIds
       ["5", "10"], // maxDuration
       ["1", "2"], // daily borrow price
       ["10", "11"], // collateral
-      { from: secondOwnerAddress }
+      {from: secondOwnerAddress}
     );
     const nft2 = await rent.nfts(face.address, "2");
     const nft3 = await rent.nfts(face.address, "3");
