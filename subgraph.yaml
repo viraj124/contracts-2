@@ -8,9 +8,9 @@ dataSources:
     name: RentNft
     network: goerli
     source:
-      address: "0x5e97A66bbe7F4549536D30dfC8557c1db5B59130"
+      address: "0x3c65a17c379B3DA6157066c8EB4D4b9e0bbD88d3"
       abi: RentNft
-      startBlock: 3649499
+      startBlock: 3683909
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
@@ -25,7 +25,7 @@ dataSources:
         - event: Lent(indexed address,indexed uint256,indexed address,uint256,uint256,uint256)
           handler: handleLent
         - event: Borrowed(indexed address,indexed uint256,indexed address,address,uint256,uint256,uint256,uint256)
-          handler: handleBorrow
+          handler: handleBorrowed
         - event: Returned(indexed address,indexed uint256,indexed address,address)
           handler: handleReturned
       file: ./mapping.ts
@@ -33,9 +33,9 @@ dataSources:
     name: GanFaceNft
     network: goerli
     source:
-      address: "0x6A353F774aeb266BA24451Be8213B9Ad0a627077"
+      address: "0x5fE2295545327dbcBCf63507B4F4145e3FC9D1b1"
       abi: GanFaceNft
-      startBlock: 3649499
+      startBlock: 3683895
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
