@@ -1,0 +1,11 @@
+RentNft
+    √ should lend one NFT (609ms)
+    √ should rent one NFT (501ms)
+    √ should lend multiple NFT (716ms)
+    √ should allow lender to stop lending (440ms)
+    RETURN
+      √ should allow user to Return One NFT before duration exceeds (367ms)
+      √ should revert when duration exceeds & user tries to Return NFT (155ms)
+      √ should allow owner to claim collateral in case of default (360ms)
+
+  7 passing (7s)
