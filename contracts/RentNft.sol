@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
+import "../node_modules/@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
 
 import "./RentNftResolver.sol";
 
@@ -100,11 +100,11 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
   // lend multiple nfts that you own to be borrowable by Rent NFT
   // for gas saving
   function lendMultiple(
-    address[] memory _nftAddresses,
-    uint256[] memory _tokenIds,
-    uint256[] memory _maxDurations,
-    uint256[] memory _borrowPrices,
-    uint256[] memory _nftPrices
+    address[] calldata _nftAddresses,
+    uint256[] calldata _tokenIds,
+    uint256[] calldata _maxDurations,
+    uint256[] calldata _borrowPrices,
+    uint256[] calldata _nftPrices
   ) external {
     // ! TODO: needed to remove nonReentrant for tests?
     require(_nftAddresses.length == _tokenIds.length, "not equal length");
@@ -165,9 +165,9 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
 
   function rentMultiple(
     address _borrower,
-    address[] memory _nftAddresses,
-    uint256[] memory _tokenIds,
-    uint256[] memory _actualDurations
+    address[] calldata _nftAddresses,
+    uint256[] calldata _tokenIds,
+    uint256[] calldata _actualDurations
   ) external nonReentrant {
     for (uint256 i = 0; i < _nftAddresses.length; i++) {
       rentOne(_borrower, _nftAddresses[i], _tokenIds[i], _actualDurations[0]);
@@ -194,8 +194,8 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
   }
 
   function returnNftMultiple(
-    address[] memory _nftAddresses,
-    uint256[] memory _tokenIds
+    address[] calldata _nftAddresses,
+    uint256[] calldata _tokenIds
   ) external nonReentrant {
     for (uint256 i = 0; i < _nftAddresses.length; i++) {
       returnNftOne(_nftAddresses[i], _tokenIds[i]);
