@@ -7,7 +7,8 @@
     "graph-deploy": "graph deploy nazariyv/rentnft --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/",
     "graph-create-local": "graph create --node http://localhost:8020/ nazariyv/rentnft",
     "graph-remove-local": "graph remove --node http://localhost:8020/ nazariyv/rentnft",
-    "graph-deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 nazariyv/rentnft"
+    "graph-deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 nazariyv/rentnft",
+    "test": "truffle test"
   },
   "dependencies": {
     "@chainlink/contracts": "^0.0.10",
