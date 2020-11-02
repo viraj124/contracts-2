@@ -131,6 +131,16 @@ describe("RentNft", () => {
     expect(nftOwner).to.eq(rent.address);
   });
 
+  it("should revert when actualDuration is higher than Max when renting out one NFT", async () => {
+    const rentDuration = "6"; // 6 days. Max is 5 days.
+    await expectRevert(
+      rent.rentOne(unprivilegedAddress, face.address, tokenId, rentDuration, {
+        from: unprivilegedAddress
+      }),
+      "Max Duration exceeded"
+    );
+  });
+
   it("should rent one NFT", async () => {
     let daiBalanceRent = await dai.balanceOf(rent.address);
     expect(daiBalanceRent).to.be.bignumber.eq("0");
@@ -250,8 +260,8 @@ describe("RentNft", () => {
       expect(nft.borrowedAt).to.be.bignumber.eq("0");
     });
     it("should revert when duration exceeds & user tries to Return NFT", async () => {
-      // advance time by 2 days and 1 sec
-      await advanceTime(2 * 24 * 60 * 60 + 1);
+      // advance time by 3 days and 1 sec
+      await advanceTime(3 * 24 * 60 * 60 + 1);
 
       await expectRevert(
         rent.returnNftOne(face.address, tokenId, {
@@ -261,8 +271,8 @@ describe("RentNft", () => {
       );
     });
     it("should allow owner to claim collateral in case of default", async () => {
-      // advance time by 2 days and 1 sec
-      await advanceTime(2 * 24 * 60 * 60 + 1);
+      // advance time by 3 days and 1 sec
+      await advanceTime(3 * 24 * 60 * 60 + 1);
 
       const iniTokenBal = await dai.balanceOf(firstOwnerAddress);
       await rent.claimCollateral(face.address, tokenId, {
