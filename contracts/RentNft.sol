@@ -132,7 +132,8 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     Nft storage nft = nfts[_nftAddress][_tokenId];
 
     require(_borrower != nft.lender, "can't borrow own nft");
-    require(_borrower > address(0), "could not find an NFT");
+    require(_borrower != address(0), "could not find an NFT");
+    require(_actualDuration <= nft.maxDuration, "Max Duration exceeded");
 
     // ! will fail if wasn't approved
     // pay the NFT owner the rent price
@@ -182,7 +183,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
 
     require(nft.borrower == msg.sender, "not borrower");
     uint256 durationInDays = now.sub(nft.borrowedAt).div(86400);
-    require(durationInDays < nft.actualDuration, "duration exceeded");
+    require(durationInDays <= nft.actualDuration, "duration exceeded");
 
     // we are returning back to the contract so that the owner does not have to add
     // it multiple times thus incurring the transaction costs
@@ -219,7 +220,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     require(nft.borrower != address(0), "nft not lent out");
 
     uint256 durationInDays = now.sub(nft.borrowedAt).div(86400);
-    require(durationInDays >= nft.actualDuration, "duration not exceeded");
+    require(durationInDays > nft.actualDuration, "duration not exceeded");
 
     resetBorrow(nft);
     ERC20(resolver.getDai()).safeTransfer(msg.sender, nft.nftPrice);
