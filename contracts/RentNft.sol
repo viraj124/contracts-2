@@ -6,10 +6,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
 
 import "./RentNftAddressProvider.sol";
 
-contract RentNft is ReentrancyGuard, Ownable {
+contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
   using SafeMath for uint256;
   using SafeERC20 for ERC20;
 
@@ -84,7 +85,7 @@ contract RentNft is ReentrancyGuard, Ownable {
     );
 
     // transfer nft to this contract. will fail if nft wasn't approved
-    ERC721(_nftAddress).transferFrom(msg.sender, address(this), _tokenId);
+    ERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
     emit Lent(
       _nftAddress,
       _tokenId,
