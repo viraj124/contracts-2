@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-import "./RentNftResolver.sol";
+import "./RentNftAddressProvider.sol";
 
 contract RentNft is ReentrancyGuard, Ownable {
   using SafeMath for uint256;
@@ -56,10 +56,10 @@ contract RentNft is ReentrancyGuard, Ownable {
   // nft address => token id => nft
   mapping(address => mapping(uint256 => Nft)) public nfts;
 
-  RentNftResolver public resolver;
+  RentNftAddressProvider public resolver;
 
   constructor(address _resolverAddress) public {
-    resolver = RentNftResolver(_resolverAddress);
+    resolver = RentNftAddressProvider(_resolverAddress);
   }
 
   // lend one nft that you own to be borrowable on Rent NFT
