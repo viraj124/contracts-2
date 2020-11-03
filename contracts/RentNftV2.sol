@@ -17,6 +17,32 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
   using SafeERC20 for IERC20;
 
   // TODO: if there are defaults, mark the address to forbid from renting
+  event Lent(
+    address indexed nftAddress,
+    uint256 indexed tokenId,
+    address indexed lender,
+    uint256 maxDuration,
+    uint256 borrowPrice,
+    uint256 nftPrice
+  );
+
+  event Borrowed(
+    address indexed nftAddress,
+    uint256 indexed tokenId,
+    address indexed borrower,
+    address lender,
+    uint256 borrowedAt,
+    uint256 borrowPrice,
+    uint256 actualDuration,
+    uint256 nftPrice
+  );
+
+  event Returned(
+    address indexed nftAddress,
+    uint256 indexed tokenId,
+    address indexed borrower,
+    address lender
+  );
 
   struct Listing {
     address lender;
@@ -91,6 +117,14 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
         isRented: false
       })
     );
+    emit Lent(
+      _nftAddress,
+      _tokenId,
+      msg.sender,
+      _maxDuration,
+      _dailyPrice,
+      _nftPrice
+    );
   }
 
   function rentOne(
@@ -155,6 +189,16 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
         listing.tokenId
       );
     }
+    emit Borrowed(
+      listing.nftAddress,
+      listing.tokenId,
+      _borrower,
+      listing.lender,
+      now,
+      listing.dailyPrice,
+      _actualDuration,
+      listing.nftPrice
+    );
   }
 
   // return specific qty of NFTs back
@@ -201,6 +245,7 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
       msg.sender,
       listing.nftPrice.mul(qty)
     );
+    emit Returned(listing.nftAddress, listing.tokenId, msg.sender, rental.borrower);
   }
 
   function claimCollateral(uint256 _rentalIndex) public nonReentrant {
