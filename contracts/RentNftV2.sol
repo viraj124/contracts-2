@@ -23,7 +23,9 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
     address indexed lender,
     uint256 maxDuration,
     uint256 borrowPrice,
-    uint256 nftPrice
+    uint256 nftPrice,
+    // for erc 1155 for erc 721 will always be 1
+    uint256 qty
   );
 
   event Borrowed(
@@ -34,14 +36,18 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
     uint256 borrowedAt,
     uint256 borrowPrice,
     uint256 actualDuration,
-    uint256 nftPrice
+    uint256 nftPrice,
+    // for erc 1155 for erc 721 will always be 1
+    uint256 qty
   );
 
   event Returned(
     address indexed nftAddress,
     uint256 indexed tokenId,
     address indexed borrower,
-    address lender
+    address lender,
+    // for erc 1155 for erc 721 will always be 1
+    uint256 qty
   );
 
   struct Listing {
@@ -123,8 +129,40 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
       msg.sender,
       _maxDuration,
       _dailyPrice,
-      _nftPrice
+      _nftPrice,
+      _totalQty
     );
+  }
+
+    // lend multiple nfts that you own to be borrowable by Rent NFT
+  // for gas saving
+  function lendMultiple(
+    address[] calldata _nftAddresses,
+    uint256[] calldata _tokenIds,
+    uint256[] calldata _maxDurations,
+    uint256[] calldata _dailyPrice,
+    uint256[] calldata _nftPrices,
+    bool[] calldata _isERC1155,
+    uint256[] calldata _totalQty
+  ) external {
+    require(_nftAddresses.length == _tokenIds.length, "not equal length");
+    require(_tokenIds.length == _maxDurations.length, "not equal length");
+    require(_maxDurations.length == _dailyPrice.length, "not equal length");
+    require(_dailyPrice.length == _nftPrices.length, "not equal length");
+    require(_nftPrices.length == _isERC1155.length, "not equal length");
+    require(_isERC1155.length == _totalQty.length, "not equal length");
+
+    for (uint256 i = 0; i < _nftAddresses.length; i++) {
+      lendOne(
+        _nftAddresses[i],
+        _tokenIds[i],
+        _maxDurations[i],
+        _dailyPrice[i],
+        _nftPrices[i],
+        _isERC1155[i],
+        _totalQty[i]
+      );
+    }
   }
 
   function rentOne(
@@ -197,10 +235,23 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
       now,
       listing.dailyPrice,
       _actualDuration,
-      listing.nftPrice
+      listing.nftPrice,
+      _qtyToBorrow
     );
   }
 
+  function rentMultiple(
+    address _borrower,
+    uint256[] calldata _listingIndexes,
+    uint256[] calldata _qtysToBorrow,
+    uint256[] calldata _actualDurations
+  ) external {
+    require(_listingIndexes.length == _qtysToBorrow.length, "not equal length");
+    require(_qtysToBorrow.length == _actualDurations.length, "not equal length");
+    for (uint256 i = 0; i < _listingIndexes.length; i++) {
+      rentOne(_borrower, _listingIndexes[i], _qtysToBorrow[i], _actualDurations[i]);
+    }
+  }
   // return specific qty of NFTs back
   function returnNftOne(uint256 _rentalIndex, uint256 _qtyToReturn)
     public
@@ -245,7 +296,14 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
       msg.sender,
       listing.nftPrice.mul(qty)
     );
-    emit Returned(listing.nftAddress, listing.tokenId, msg.sender, rental.borrower);
+    emit Returned(listing.nftAddress, listing.tokenId, msg.sender, rental.borrower, _qtyToReturn);
+  }
+
+    function returnNftMultiple(uint256[] calldata _rentalIndexes, uint256[] calldata _tokenIds) external {
+    require(_rentalIndexes.length == _tokenIds.length, "not equal length");
+    for (uint256 i = 0; i < _rentalIndexes.length; i++) {
+      returnNftOne(_rentalIndexes[i], _tokenIds[i]);
+    }
   }
 
   function claimCollateral(uint256 _rentalIndex) public nonReentrant {
