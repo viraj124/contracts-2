@@ -82,7 +82,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
       borrowPrice: _borrowPrice,
       borrowedAt: 0,
       nftPrice: _nftPrice
-    });
+      });
 
     // transfer nft to this contract. will fail if nft wasn't approved
     ERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
