@@ -82,7 +82,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
       borrowPrice: _borrowPrice,
       borrowedAt: 0,
       nftPrice: _nftPrice
-    });
+      });
 
     // transfer nft to this contract. will fail if nft wasn't approved
     ERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
@@ -219,6 +219,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
   function stopLending(address _nftAddress, uint256 _tokenId) public {
     Nft storage nft = nfts[_nftAddress][_tokenId];
     require(nft.lender == msg.sender, "not lender");
+    require(nft.borrowedAt == 0, "nft is borrowed currently");
     // if NFT lent out, then this will revert:
     ERC721(_nftAddress).safeTransferFrom(address(this), nft.lender, _tokenId);
   }
