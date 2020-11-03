@@ -7,40 +7,10 @@ const {
   expectRevert,
   BN,
   ether,
-  constants
+  constants,
+  time
 } = require("@openzeppelin/test-helpers");
 const {expect} = require("chai");
-
-function advanceTime(duration) {
-  const id = Date.now();
-
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send(
-      {
-        jsonrpc: "2.0",
-        method: "evm_increaseTime",
-        params: [duration],
-        id: id
-      },
-      (err1) => {
-        // console.log("increased with evm_mine");
-        if (err1) return reject(err1);
-
-        web3.currentProvider.send(
-          {
-            jsonrpc: "2.0",
-            method: "evm_mine",
-            id: id + 1
-          },
-          (err2, res) => {
-            //  console.log("increased time: " + Math.round(Date.now() / 1000));
-            return err2 ? reject(err2) : resolve(res);
-          }
-        );
-      }
-    );
-  });
-}
 
 const RentNftResolver = contract.fromArtifact("RentNftResolver");
 const RentNft = contract.fromArtifact("RentNft");
@@ -333,7 +303,7 @@ describe("RentNft", () => {
     });
     it("should revert when duration exceeds & user tries to Return NFT", async () => {
       // advance time by 3 days and 1 sec
-      await advanceTime(3 * 24 * 60 * 60 + 1);
+      await time.increase(3 * 24 * 60 * 60 + 1);
 
       await expectRevert(
         rent.returnNftOne(face.address, tokenId, {
@@ -344,7 +314,7 @@ describe("RentNft", () => {
     });
     it("should allow owner to claim collateral in case of default", async () => {
       // advance time by 3 days and 1 sec
-      await advanceTime(3 * 24 * 60 * 60 + 1);
+      await time.increase(3 * 24 * 60 * 60 + 1);
 
       const iniTokenBal = await dai.balanceOf(firstOwnerAddress);
       await rent.claimCollateral(face.address, tokenId, {
