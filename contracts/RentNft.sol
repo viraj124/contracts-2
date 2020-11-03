@@ -168,6 +168,8 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     uint256[] calldata _tokenIds,
     uint256[] calldata _actualDurations
   ) external {
+    require(_nftAddresses.length == _tokenIds.length, "not equal length");
+    require(_tokenIds.length == _actualDurations.length, "not equal length");
     for (uint256 i = 0; i < _nftAddresses.length; i++) {
       rentOne(_borrower, _nftAddresses[i], _tokenIds[i], _actualDurations[i]);
     }
@@ -196,6 +198,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     address[] calldata _nftAddresses,
     uint256[] calldata _tokenIds
   ) external {
+    require(_nftAddresses.length == _tokenIds.length, "not equal length");
     for (uint256 i = 0; i < _nftAddresses.length; i++) {
       returnNftOne(_nftAddresses[i], _tokenIds[i]);
     }
