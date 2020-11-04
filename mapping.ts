@@ -13,149 +13,247 @@ import {
   ApprovedAll
 } from "./generated/schema";
 
-export function handleLent(event: Lent): void {
-  const id = event.params.tokenId;
-  const nft = new Nft(id.toHex());
+const createUser = (id: string): User => {
+  const user = new User(id);
+  user.lending = new Array<string>();
+  user.borrowing = new Array<string>();
+  user.faces = new Array<string>();
+  user.approvals = new Array<string>();
+  user.approvedAll = new Array<string>();
+  return user;
+};
 
-  nft.address = event.params.nftAddress;
-  nft.lender = event.params.lender;
-  nft.borrowPrice = event.params.borrowPrice;
-  nft.maxDuration = event.params.maxDuration;
-  nft.nftPrice = event.params.nftPrice;
+const resetBorrowedNft = (nft: Nft): Nft => {
   nft.borrower = null;
-  nft.borrowedAt = BigInt.fromI32(0);
   nft.actualDuration = BigInt.fromI32(0);
-  nft.face = id.toHex();
+  nft.borrowedAt = BigInt.fromI32(0);
+  return nft;
+};
 
-  let lender = User.load(event.params.lender.toHex());
-  if (lender == null) {
-    lender = new User(event.params.lender.toHex());
-    lender.lending = new Array<string>();
-    lender.borrowing = new Array<string>();
-    lender.approvals = new Array<string>();
-    lender.approvedAll = new Array<string>();
+const getFaceId = (nftAddr: string, tokenId: string): string =>
+  `${nftAddr}::${tokenId}`;
+const getNftId = (faceId: string, lender: string): string =>
+  `${faceId}::${lender}`;
+const getApprovedOneId = (
+  nftAddress: string,
+  owner: string,
+  approved: string,
+  tokenId: string
+): string => `${nftAddress}::${tokenId}::${owner}::${approved}`;
+const getApprovedAllId = (
+  nftAddress: string,
+  owner: string,
+  approved: string
+): string => `${nftAddress}::${owner}::${approved}`;
+
+export const handleLent = (event: Lent): void => {
+  // ! FACE MUST EXIST AT THIS POINT
+  const lentParams = event.params;
+  // imagine the following: contract A & contract B
+  // contract A is the owner of the NFT
+  // they lend it out. They don't see it in their Lend tab
+  // contract B borrows. Now they can lend it out
+  // they lend it out, and now contrct A can see it and rent it out
+  // if contract A defaults, they will pay the collateral
+  // this will trigger contract B default, which means contract
+  // A can now claim the collateral
+  // For this reason the NFT id must have additional information
+  // this means that the same actual NFT may have more than one
+  // entry in the graph. Number of entries is determined by how
+  // many times it was lent out. The so-called NFT "hot-potato"
+  // AKA mortgage backed security
+  const lenderAddress = lentParams.lender.toHex();
+  const faceId = getFaceId(
+    lentParams.nftAddress.toHex(),
+    lentParams.tokenId.toHex()
+  );
+  const nftId = getNftId(faceId, lenderAddress);
+
+  // * ------------------------ NFT --------------------------
+  // if the user previously lent out the NFT
+  let nft = Nft.load(nftId);
+  // creating a new nft, if this is the first time
+  if (!nft) {
+    nft = new Nft(nftId);
   }
+  // -----------------------------------
+  // for safety
+  // ! does not work something about the explicit case from null...
+  // nft = resetBorrowedNft(nft);
+  nft.borrower = null;
+  nft.actualDuration = BigInt.fromI32(0);
+  nft.borrowedAt = BigInt.fromI32(0);
+  // -----------------------------------
 
-  let lending = lender.lending;
-  lending.push(nft.id);
-  lender.lending = lending;
+  nft.address = lentParams.nftAddress;
+  nft.lender = lentParams.lender;
+  nft.borrowPrice = lentParams.borrowPrice;
+  nft.maxDuration = lentParams.maxDuration;
+  nft.nftPrice = lentParams.nftPrice;
+
+  // populating / creating lender
+  let lender = User.load(lenderAddress);
+  if (!lender) {
+    lender = createUser(lenderAddress);
+  }
+  lender.lending.push(nftId);
+  // * --------------------------------------------------------
+
+  // ! -------------------------------------------------------
+  // ! production: remove the faces
+  if (!lender.faces.includes(nftId)) {
+    // ! FACE MUST EXIST. IF IT DOESN'T, IT WILL NOT HAVE A URI
+    lender.faces.push(faceId);
+  }
+  nft.face = faceId;
+  // ! -------------------------------------------------------
 
   nft.save();
   lender.save();
-}
+};
 
-export function handleBorrowed(event: Borrowed): void {
-  const id = event.params.tokenId;
-  const nft = Nft.load(id.toHex());
+export const handleBorrowed = (event: Borrowed): void => {
+  // ! FACE MUST EXIST AT THIS POINT
+  const borrowedParams = event.params;
+  const faceId = getFaceId(
+    borrowedParams.nftAddress.toHex(),
+    borrowedParams.tokenId.toHex()
+  );
+  const nftId = getNftId(faceId, borrowedParams.lender.toHex());
+  const nft = Nft.load(nftId);
 
-  nft.actualDuration = event.params.actualDuration;
-  nft.borrowedAt = event.params.borrowedAt;
-  nft.borrower = event.params.borrower;
+  nft.borrower = borrowedParams.borrower;
+  nft.actualDuration = borrowedParams.actualDuration;
+  nft.borrowedAt = borrowedParams.borrowedAt;
 
-  let borrower = User.load(event.params.borrower.toHex());
-  if (borrower == null) {
-    borrower = new User(event.params.borrower.toHex());
-    borrower.lending = new Array<string>();
-    borrower.borrowing = new Array<string>();
-    borrower.approvals = new Array<string>();
-    borrower.approvedAll = new Array<string>();
+  // populating / creating borrower
+  const borrowerAddr = borrowedParams.borrower.toHex();
+  let borrower = User.load(borrowerAddr);
+  if (!borrower) {
+    borrower = createUser(borrowerAddr);
   }
-
-  let borrowing = borrower.borrowing;
-  borrowing.push(nft.id);
-  borrower.borrowing = borrowing;
-
-  borrower.borrowing.push(nft.id);
+  borrower.borrowing.push(nftId);
 
   nft.save();
   borrower.save();
-}
+};
 
-export function handleReturned(event: Returned): void {
-  const id = event.params.tokenId;
-  const nft = Nft.load(id.toHex());
+export const handleReturned = (event: Returned): void => {
+  const returnParams = event.params;
+  const faceId = getFaceId(
+    returnParams.nftAddress.toHex(),
+    returnParams.tokenId.toHex()
+  );
+  const nftId = getNftId(faceId, returnParams.lender.toHex());
+  let nft = Nft.load(nftId);
+  const user = User.load(nft.borrower.toHex());
 
-  nft.actualDuration = BigInt.fromI32(0);
+  // -----------------------------------
+  // nft = resetBorrowedNft(nft);
   nft.borrower = null;
+  nft.actualDuration = BigInt.fromI32(0);
   nft.borrowedAt = BigInt.fromI32(0);
+  // -----------------------------------
 
-  nft.save();
-}
-
-// gan face contract
-export function handleNewFace(event: NewFace): void {
-  const id = event.params.tokenId;
-  const face = new Face(id.toHex());
-  face.uri = event.params.tokenURI;
-  face.save();
-
-  let user = User.load(event.params.owner.toHex());
-  if (user == null) {
-    user = new User(event.params.owner.toHex());
-    user.lending = new Array<string>();
-    user.borrowing = new Array<string>();
-    user.faces = new Array<string>();
-    user.approvals = new Array<string>();
-    user.approvedAll = new Array<string>();
-  }
-  let faces = user.faces;
-  faces.push(face.id);
-  user.faces = faces;
+  // ----------------------------------------------------
+  // when the user returns the item, we remove it from their borrowing field
+  // ! it does not see nftId in scope
+  const borrowing = user.borrowing.filter((item) => {
+    // ? how do I remove nftId declaration here?
+    const faceId = getFaceId(
+      event.params.nftAddress.toHex(),
+      event.params.tokenId.toHex()
+    );
+    const nftId = getNftId(faceId, event.params.lender.toHex());
+    return item !== nftId;
+  });
+  user.borrowing = borrowing;
+  // ----------------------------------------------------
 
   user.save();
+  nft.save();
+};
+
+// TODO: handler for the opposite of handleLent
+// i.e. for when the user removes the NFT from the platform
+// when we return the NFT back to them
+
+// ! ------------------------- remove in prod -----------------------------------
+// gan face contract
+export function handleNewFace(event: NewFace): void {
+  const newFaceParams = event.params;
+  // ! ensure that event.address is the address of the NFT
+  const faceId = getFaceId(
+    event.address.toHex(),
+    newFaceParams.tokenId.toHex()
+  );
+  const face = new Face(faceId);
+  face.uri = newFaceParams.tokenURI;
+
+  const nftOwner = event.params.owner.toHex();
+  let user = User.load(nftOwner);
+  if (!user) {
+    user = createUser(nftOwner);
+  }
+  user.faces.push(faceId);
+
+  face.save();
+  user.save();
 }
+// ! --------------------------------------------------------------------------
 
-export function handleApproval(event: ApprovalEvent): void {
-  const nftOwner = event.params.owner;
-  const approved = event.params.approved;
-  const tokenId = event.params.tokenId;
+export const handleApprovalOne = (event: ApprovalEvent): void => {
+  const approvalParams = event.params;
+  const nftOwner = approvalParams.owner;
+  const approved = approvalParams.approved;
+  const tokenId = approvalParams.tokenId;
+  const nftOwnerHex = nftOwner.toHex();
 
-  const id = nftOwner.toHex().concat(approved.toHex()).concat(tokenId.toHex());
-  const approval = new ApprovalSchema(id);
-
+  // ! check that the event.address is the NFT address (like above)
+  const approvalId = getApprovedOneId(
+    event.address.toHex(),
+    tokenId.toHex(),
+    nftOwnerHex,
+    approved.toHex()
+  );
+  const approval = new ApprovalSchema(approvalId);
+  approval.nftAddress = event.address;
   approval.owner = nftOwner;
   approval.approved = approved;
   approval.tokenId = tokenId;
-  approval.save();
 
   // now update the user if exists. If not, create them
-  let user = User.load(nftOwner.toHex());
-  if (user == null) {
-    user = new User(nftOwner.toHex());
-    user.lending = new Array<string>();
-    user.borrowing = new Array<string>();
-    user.faces = new Array<string>();
-    user.approvals = new Array<string>();
-    user.approvedAll = new Array<string>();
+  let user = User.load(nftOwnerHex);
+  if (!user) {
+    user = createUser(nftOwnerHex);
   }
 
-  user.approvals.push(approval.id);
+  approval.save();
+  user.approvals.push(approvalId);
   user.save();
-}
+};
 
-export function handleApprovalForAll(event: ApprovalForAll): void {
+export const handleApprovalAll = (event: ApprovalForAll): void => {
   const nftOwner = event.params.owner;
   const approved = event.params.operator;
+  const nftOwnerHex = nftOwner.toHex();
 
-  const id = nftOwner.toHex().concat(approved.toHex());
-
-  const approvedAll = new ApprovedAll(id);
+  const approveAllId = getApprovedAllId(
+    event.address.toHex(),
+    nftOwnerHex,
+    approved.toHex()
+  );
+  const approvedAll = new ApprovedAll(approveAllId);
+  approvedAll.nftAddress = event.address;
   approvedAll.owner = nftOwner;
   approvedAll.approved = approved;
 
-  approvedAll.save();
-
-  let user = User.load(nftOwner.toHex());
+  let user = User.load(nftOwnerHex);
   if (user == null) {
-    user = new User(nftOwner.toHex());
-    user.lending = new Array<string>();
-    user.borrowing = new Array<string>();
-    user.faces = new Array<string>();
-    user.approvals = new Array<string>();
-    user.approvedAll = new Array<string>();
+    user = createUser(nftOwnerHex);
   }
 
-  user.approvedAll.push(approvedAll.id);
-
+  approvedAll.save();
+  user.approvedAll.push(approveAllId);
   user.save();
-}
+};

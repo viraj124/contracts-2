@@ -49,7 +49,7 @@ dataSources:
         - event: NewFace(indexed address,indexed uint256,string)
           handler: handleNewFace
         - event: Approval(indexed address,indexed address,indexed uint256)
-          handler: handleApproval
+          handler: handleApprovalOne
         - event: ApprovalForAll(indexed address,indexed address,bool)
-          handler: handleApprovalForAll
+          handler: handleApprovalAll
       file: ./mapping.ts
