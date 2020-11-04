@@ -18,13 +18,15 @@ type Nft @entity {
 
 type Approval @entity {
   id: ID!
+  nftAddress: Bytes!
+  tokenId: BigInt!
   owner: Bytes!
   approved: Bytes!
-  tokenId: BigInt!
 }
 
 type ApprovedAll @entity {
   id: ID!
+  nftAddress: Bytes!
   owner: Bytes!
   approved: Bytes!
 }
