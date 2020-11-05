@@ -18,17 +18,19 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
 
   // TODO: if there are defaults, mark the address to forbid from renting
   event Lent(
+    uint256 lentIndex,
     address indexed nftAddress,
     uint256 indexed tokenId,
     address indexed lender,
     uint256 maxDuration,
-    uint256 borrowPrice,
+    uint256 dailyPrice,
     uint256 nftPrice,
     // for erc 1155 for erc 721 will always be 1
     uint256 qty
   );
 
   event Borrowed(
+    uint256 rentIndex,
     address indexed nftAddress,
     uint256 indexed tokenId,
     address indexed borrower,
@@ -42,6 +44,8 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
   );
 
   event Returned(
+    uint256 lentIndex,
+    uint256 rentIndex,
     address indexed nftAddress,
     uint256 indexed tokenId,
     address indexed borrower,
@@ -124,6 +128,8 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
       })
     );
     emit Lent(
+      // getting the newly added lent index
+      listings.length.sub(1),
       _nftAddress,
       _tokenId,
       msg.sender,
@@ -228,6 +234,8 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
       );
     }
     emit Borrowed(
+      // getting the newly added rent index
+      rentals.length.sub(1),
       listing.nftAddress,
       listing.tokenId,
       _borrower,
@@ -296,7 +304,7 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
       msg.sender,
       listing.nftPrice.mul(qty)
     );
-    emit Returned(listing.nftAddress, listing.tokenId, msg.sender, rental.borrower, _qtyToReturn);
+    emit Returned(rental.listingIndex, _rentalIndex, listing.nftAddress, listing.tokenId, msg.sender, rental.borrower, _qtyToReturn);
   }
 
     function returnNftMultiple(uint256[] calldata _rentalIndexes, uint256[] calldata _tokenIds) external {
