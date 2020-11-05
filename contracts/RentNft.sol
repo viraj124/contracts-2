@@ -62,6 +62,15 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     resolver = RentNftAddressProvider(_resolver);
   }
 
+  /**
+  * @dev See {IERC721Receiver-onERC721Received}.
+  *
+  * Always returns `IERC721Receiver.onERC721Received.selector`.
+  */
+  function onERC721Received(address, address, uint256, bytes memory) public virtual override returns (bytes4) {
+    return this.onERC721Received.selector;
+  }
+
   // lend one nft that you own to be borrowable on Rent NFT
   function lendOne(
     address _nftAddress,
