@@ -12,7 +12,9 @@ const {
 } = require("@openzeppelin/test-helpers");
 const {expect} = require("chai");
 
-const RentNftResolver = contract.fromArtifact("RentNftResolver");
+const {advanceBlock} = require("./helper");
+
+const RentNftAddressProvider = contract.fromArtifact("RentNftAddressProvider");
 const RentNft = contract.fromArtifact("RentNft");
 const GanFaceNft = contract.fromArtifact("GanFaceNft");
 const PaymentToken = contract.fromArtifact("PaymentToken");
@@ -25,6 +27,7 @@ let dai;
 let rent;
 let face;
 
+const LOCAL_CHAIN_ID = "0";
 const BORROW_PRICE = "1";
 const MAX_DURATION = "5";
 const NFT_PRICE = "11";
@@ -40,16 +43,12 @@ describe("RentNft", () => {
 
   before(async () => {
     dai = await PaymentToken.new({from: creatorAddress});
-    resolver = await RentNftResolver.new(
-      2,
-      dai.address,
-      NILADDR,
-      NILADDR,
-      NILADDR,
-      NILADDR
-    );
-    rent = await RentNft.new(resolver.address, {from: creatorAddress});
+    rent = await RentNft.new(LOCAL_CHAIN_ID, {from: creatorAddress});
     face = await GanFaceNft.new({from: creatorAddress});
+
+    // resolver = new web3.eth.Contract(RentNftAddressProvider.abi, await rent.resolver.call());
+    // // wait for the ownership of address provider to move to creatorAddress
+    // await resolver.methods.setDai(dai.address).send({from: creatorAddress});
 
     // approvals for NFT and DAI handling by the rent contract
     await face.setApprovalForAll(rent.address, true, {
