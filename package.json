@@ -13,7 +13,6 @@
     "test:rentnft": "npm run test ./test/rentnft-unit-integration.js"
   },
   "dependencies": {
-    "@chainlink/contracts": "^0.0.10",
     "@openzeppelin/contracts": "^3.2.0",
     "@truffle/hdwallet-provider": "^1.0.44",
     "node-fetch": "^2.6.1",
