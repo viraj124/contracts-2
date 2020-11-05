@@ -3,16 +3,8 @@
  *  #> npm run test:rentnft
  * */
 const {accounts, contract, web3} = require("@openzeppelin/test-environment");
-const {
-  expectRevert,
-  BN,
-  ether,
-  constants,
-  time
-} = require("@openzeppelin/test-helpers");
+const {expectRevert, constants, time} = require("@openzeppelin/test-helpers");
 const {expect} = require("chai");
-
-const {advanceBlock} = require("./helper");
 
 const RentNftAddressProvider = contract.fromArtifact("RentNftAddressProvider");
 const RentNft = contract.fromArtifact("RentNft");

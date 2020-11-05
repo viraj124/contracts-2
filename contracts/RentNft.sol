@@ -144,7 +144,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
 
     require(nft.lender != address(0), "could not find an NFT");
     require(_borrower != nft.lender, "can't borrow own nft");
-    require(_actualDuration <= nft.maxDuration, "Max Duration exceeded");
+    require(_actualDuration <= nft.maxDuration, "max duration exceeded");
 
     // ! will fail if wasn't approved
     // pay the NFT owner the rent price
