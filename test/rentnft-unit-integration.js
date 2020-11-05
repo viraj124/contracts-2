@@ -43,12 +43,13 @@ describe("RentNft", () => {
 
   before(async () => {
     dai = await PaymentToken.new({from: creatorAddress});
-    rent = await RentNft.new(LOCAL_CHAIN_ID, {from: creatorAddress});
+    resolver = await RentNftAddressProvider.new(LOCAL_CHAIN_ID, {
+      from: creatorAddress
+    });
+    rent = await RentNft.new(resolver.address, {from: creatorAddress});
     face = await GanFaceNft.new({from: creatorAddress});
 
-    // resolver = new web3.eth.Contract(RentNftAddressProvider.abi, await rent.resolver.call());
-    // // wait for the ownership of address provider to move to creatorAddress
-    // await resolver.methods.setDai(dai.address).send({from: creatorAddress});
+    await resolver.setDai(dai.address, {from: creatorAddress});
 
     // approvals for NFT and DAI handling by the rent contract
     await face.setApprovalForAll(rent.address, true, {

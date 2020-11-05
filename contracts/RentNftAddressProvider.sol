@@ -11,9 +11,8 @@ contract RentNftAddressProvider is Ownable, AddressStorage {
 
   uint8 private networkId;
 
-  constructor(uint8 _networkId, address _setter) public {
+  constructor(uint8 _networkId) public {
     networkId = _networkId;
-    transferOwnership(_setter);
   }
 
   function getDai() public view returns (address) {
