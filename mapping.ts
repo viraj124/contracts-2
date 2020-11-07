@@ -7,7 +7,8 @@ import {
 } from "./generated/GanFaceNft/GanFaceNft";
 import {
   Face,
-  Nft,
+  Listing,
+  Rental,
   User,
   Approval as ApprovalSchema,
   ApprovedAll
@@ -23,12 +24,12 @@ let createUser = (id: string): User => {
   return user;
 };
 
-let resetBorrowedNft = (nft: Nft): Nft => {
-  nft.borrower = null;
-  nft.actualDuration = BigInt.fromI32(0);
-  nft.borrowedAt = BigInt.fromI32(0);
-  return nft;
-};
+// let resetBorrowedNft = (nft: Nft): Nft => {
+//   nft.borrower = null;
+//   nft.actualDuration = BigInt.fromI32(0);
+//   nft.borrowedAt = BigInt.fromI32(0);
+//   return nft;
+// };
 
 // ! notes for self
 // 1. string templating does not work
@@ -72,29 +73,32 @@ export function handleLent(event: Lent): void {
     lentParams.nftAddress.toHex(),
     lentParams.tokenId.toHex()
   );
+  let listingId = lentParams.lentIndex;
+
   let nftId = getNftId(faceId, lenderAddress);
 
   // * ------------------------ NFT --------------------------
   // if the user previously lent out the NFT
-  let nft = Nft.load(nftId);
+  let listing = Listing.load(listingId.toHex());
   // creating a new nft, if this is the first time
-  if (!nft) {
-    nft = new Nft(nftId);
+  if (!listing) {
+    listing = new Listing(listingId.toHex());
   }
+  listing.address = lentParams.nftAddress;
+  listing.lender = lentParams.lender;
+  listing.dailyPrice = lentParams.dailyPrice;
+  listing.maxDuration = lentParams.maxDuration;
+  listing.nftPrice = lentParams.nftPrice;
+  listing.tokenId = lentParams.tokenId;
+  listing.rentStatus = false;
   // -----------------------------------
-  // for safety
-  // ! does not work something about the explicit case from null...
-  // nft = resetBorrowedNft(nft);
-  nft.borrower = null;
-  nft.actualDuration = BigInt.fromI32(0);
-  nft.borrowedAt = BigInt.fromI32(0);
+  // // for safety
+  // // ! does not work something about the explicit case from null...
+  // // nft = resetBorrowedNft(nft);
+  // nft.borrower = null;
+  // nft.actualDuration = BigInt.fromI32(0);
+  // nft.borrowedAt = BigInt.fromI32(0);
   // -----------------------------------
-
-  nft.address = lentParams.nftAddress;
-  nft.lender = lentParams.lender;
-  nft.borrowPrice = lentParams.borrowPrice;
-  nft.maxDuration = lentParams.maxDuration;
-  nft.nftPrice = lentParams.nftPrice;
 
   // populating / creating lender
   let lender = User.load(lenderAddress);
@@ -102,7 +106,7 @@ export function handleLent(event: Lent): void {
     lender = createUser(lenderAddress);
   }
   let newLending = lender.lending;
-  newLending.push(nftId);
+  newLending.push(listing.id);
   lender.lending = newLending;
   // * --------------------------------------------------------
 
@@ -114,26 +118,26 @@ export function handleLent(event: Lent): void {
     newFaces.push(faceId);
     lender.faces = newFaces;
   }
-  nft.face = faceId;
+  listing.face = faceId;
   // ! -------------------------------------------------------
 
-  nft.save();
+  listing.save();
   lender.save();
 }
 
 export function handleBorrowed(event: Borrowed): void {
   // ! FACE MUST EXIST AT THIS POINT
   let borrowedParams = event.params;
-  let faceId = getFaceId(
-    borrowedParams.nftAddress.toHex(),
-    borrowedParams.tokenId.toHex()
-  );
-  let nftId = getNftId(faceId, borrowedParams.lender.toHex());
-  let nft = Nft.load(nftId);
 
-  nft.borrower = borrowedParams.borrower;
-  nft.actualDuration = borrowedParams.actualDuration;
-  nft.borrowedAt = borrowedParams.borrowedAt;
+  let rentalId = borrowedParams.rentIndex;
+  let listingId = borrowedParams.lentIndex;
+  let listing = Listing.load(listingId.toHex());
+  listing.rentStatus = true;
+  let rental = new Rental(rentalId.toHex());
+  rental.borrower = borrowedParams.borrower;
+  rental.listingIndex = listing.id;
+  rental.actualDuration = borrowedParams.actualDuration;
+  rental.borrowedAt = rental.borrowedAt;
 
   // populating / creating borrower
   let borrowerAddr = borrowedParams.borrower.toHex();
@@ -142,44 +146,47 @@ export function handleBorrowed(event: Borrowed): void {
     borrower = createUser(borrowerAddr);
   }
   let newBorrowing = borrower.borrowing;
-  newBorrowing.push(nftId);
+  newBorrowing.push(rental.id);
   borrower.borrowing = newBorrowing;
-
-  nft.save();
+  listing.save();
+  rental.save();
   borrower.save();
 }
 
 export function handleReturned(event: Returned): void {
   let returnParams = event.params;
-  let faceId = getFaceId(
-    returnParams.nftAddress.toHex(),
-    returnParams.tokenId.toHex()
-  );
-  let nftId = getNftId(faceId, returnParams.lender.toHex());
-  let nft = Nft.load(nftId);
-  let borrowerAddress = returnParams.borrower.toHex();
-  let borrowerUser = User.load(borrowerAddress);
+  let listing = Listing.load(returnParams.lentIndex.toHex());
+  listing.rentStatus = false;
+  let rental = Rental.load(returnParams.rentIndex.toHex());
+  rental.borrower = null;
+  rental.actualDuration = BigInt.fromI32(0);
+  rental.borrowedAt = BigInt.fromI32(0);
+  // let faceId = getFaceId(
+  //   returnParams.nftAddress.toHex(),
+  //   returnParams.tokenId.toHex()
+  // );
+  // let nftId = getNftId(faceId, returnParams.lender.toHex());
+  // let nft = Nft.load(nftId);
+  let user = User.load(rental.borrower.toHex());
 
-  // if the nft does not exist in graph, then there is nothing to return
-  // here is the original issue: https://trello.com/c/otKfPncH/57-solidity-contracts-returning-fails-the-graph
-  // if (!nft) return;
-  // UPDATE: this was due to Return event specifying borrower twice
-  // for borrower and for lender
+  // -----------------------------------
+  // nft = resetBorrowedNft(nft);
+
+  // -----------------------------------
 
   // ----------------------------------------------------
   // when the user returns the item, we remove it from their borrowing field
-  let borrowing = <string[]>borrowerUser.borrowing;
-  let borrowingIndex = borrowing.indexOf(nftId);
-  borrowing.splice(borrowingIndex, 1);
+  // ! it does not see nftId in scope
+  let borrowed = user.borrowing;
+  let borrowingIndex = borrowed.indexOf(rental.id);
+  borrowed.splice(borrowingIndex, 1);
 
-  borrowerUser.borrowing = borrowing;
-  nft.borrower = null;
-  nft.actualDuration = BigInt.fromI32(0);
-  nft.borrowedAt = BigInt.fromI32(0);
+  user.borrowing = borrowed;
   // ----------------------------------------------------
 
-  borrowerUser.save();
-  nft.save();
+  user.save();
+  listing.save();
+  rental.save();
 }
 
 // TODO: handler for the opposite of handleLent

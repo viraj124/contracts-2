@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
 
 import "./RentNftAddressProvider.sol";
 
-contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder {
+contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -29,6 +29,7 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder {
     uint256 rentIndex,
     address indexed nftAddress,
     uint256 indexed tokenId,
+    uint256 lentIndex,
     address indexed borrower,
     address lender,
     uint256 borrowedAt,
@@ -183,6 +184,7 @@ contract RentNftV2 is ReentrancyGuard, Ownable, ERC721Holder {
       rentals.length.sub(1),
       listing.nftAddress,
       listing.tokenId,
+      _listingIndex,
       _borrower,
       listing.lender,
       now,
