@@ -1,0 +1,7 @@
+GanFaceNft
+    MINTING
+      √ mints nft (700ms)
+      √ transfers the nft to the owner (506ms)
+
+
+  2 passing (3s)
