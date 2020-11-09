@@ -2,7 +2,7 @@
  * execute with:
  *  #> npm run test:rentnft
  * */
-const {accounts, contract, web3} = require("@openzeppelin/test-environment");
+const {accounts, contract} = require("@openzeppelin/test-environment");
 const {
   expectRevert,
   BN,
@@ -286,8 +286,8 @@ describe("RentNft", () => {
         from: unprivilegedAddress
       });
 
-      const rentalCount = await rent.getRentalCount();
-      const rental = await rent.rentals(rentalCount.sub(new BN("1")));
+      const rentalCount = await rent.getBorrowCount();
+      const rental = await rent.borrows(rentalCount.sub(new BN("1")));
       const listing = await rent.listings(listingIndex);
 
       expect(listing.isBorrowed).to.be.true;
@@ -326,15 +326,15 @@ describe("RentNft", () => {
           from: unprivilegedAddress
         }
       );
-      const rentalCount = await rent.getRentalCount();
-      const rental1 = await rent.rentals(rentalCount.sub(new BN("2")));
+      const rentalCount = await rent.getBorrowCount();
+      const rental1 = await rent.borrows(rentalCount.sub(new BN("2")));
       const listing1 = await rent.listings(listingIndex1);
       expect(listing1.isBorrowed).to.be.true;
       expect(rental1.borrower).to.eq(unprivilegedAddress);
       expect(rental1.listingIndex).to.be.bignumber.eq(listingIndex1);
       expect(rental1.actualDuration).to.be.bignumber.eq(new BN("2"));
 
-      const rental2 = await rent.rentals(rentalCount.sub(new BN("1")));
+      const rental2 = await rent.borrows(rentalCount.sub(new BN("1")));
       const listing2 = await rent.listings(listingIndex2);
       expect(listing2.isBorrowed).to.be.true;
       expect(rental2.borrower).to.eq(unprivilegedAddress);
@@ -387,9 +387,9 @@ describe("RentNft", () => {
     });
 
     it("should allow user to Return One NFT before duration exceeds", async () => {
-      const rentalCount = await rent.getRentalCount();
+      const rentalCount = await rent.getBorrowCount();
       const rentalIndex = rentalCount.sub(new BN("1"));
-      const iniRental = await rent.rentals(rentalIndex);
+      const iniRental = await rent.borrows(rentalIndex);
       const listingIndex = iniRental.listingIndex;
 
       const iniTokenBal = await dai.balanceOf(unprivilegedAddress);
@@ -404,7 +404,7 @@ describe("RentNft", () => {
       // transfer NFT back
       expect(nftOwner).to.eq(rent.address);
 
-      const rental = await rent.rentals(rentalIndex);
+      const rental = await rent.borrows(rentalIndex);
       const listing = await rent.listings(listingIndex);
       expect(listing.isBorrowed).to.be.false;
       expect(rental.borrower).to.eq(NILADDR);
@@ -417,7 +417,7 @@ describe("RentNft", () => {
       // advance time by 10 days and 1 sec
       await time.increase(10 * 24 * 60 * 60 + 1);
 
-      const rentalCount = await rent.getRentalCount();
+      const rentalCount = await rent.getBorrowCount();
       const rentalIndex = rentalCount.sub(new BN("1"));
       await expectRevert(
         rent.returnNftOne(rentalIndex, {
@@ -431,7 +431,7 @@ describe("RentNft", () => {
       // advance time by 10 days and 1 sec
       await time.increase(10 * 24 * 60 * 60 + 1);
 
-      const rentalCount = await rent.getRentalCount();
+      const rentalCount = await rent.getBorrowCount();
       const rentalIndex = rentalCount.sub(new BN("1"));
 
       const iniTokenBal = await dai.balanceOf(firstOwnerAddress);
@@ -444,7 +444,7 @@ describe("RentNft", () => {
     });
 
     it("should return multiple NFTs", async () => {
-      const rentalCount = await rent.getRentalCount();
+      const rentalCount = await rent.getBorrowCount();
       const rentalIndex1 = rentalCount.sub(new BN("2"));
       const rentalIndex2 = rentalCount.sub(new BN("1"));
 
