@@ -121,7 +121,10 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
   ) external {
     require(_nftAddresses.length == _tokenIds.length, "not equal length");
     require(_tokenIds.length == _maxDurations.length, "not equal length");
-    require(_maxDurations.length == _dailyBorrowPrice.length, "not equal length");
+    require(
+      _maxDurations.length == _dailyBorrowPrice.length,
+      "not equal length"
+    );
     require(_dailyBorrowPrice.length == _nftPrices.length, "not equal length");
 
     for (uint256 i = 0; i < _nftAddresses.length; i++) {
