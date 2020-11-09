@@ -24,13 +24,6 @@ let createUser = (id: string): User => {
   return user;
 };
 
-// let resetBorrowedNft = (nft: Nft): Nft => {
-//   nft.borrower = null;
-//   nft.actualDuration = BigInt.fromI32(0);
-//   nft.borrowedAt = BigInt.fromI32(0);
-//   return nft;
-// };
-
 // ! notes for self
 // 1. string templating does not work
 // 2. variables from function scope not visible inside of .filter
@@ -161,12 +154,6 @@ export function handleReturned(event: Returned): void {
   rental.borrower = null;
   rental.actualDuration = BigInt.fromI32(0);
   rental.borrowedAt = BigInt.fromI32(0);
-  // let faceId = getFaceId(
-  //   returnParams.nftAddress.toHex(),
-  //   returnParams.tokenId.toHex()
-  // );
-  // let nftId = getNftId(faceId, returnParams.lender.toHex());
-  // let nft = Nft.load(nftId);
   let user = User.load(rental.borrower.toHex());
 
   // -----------------------------------
