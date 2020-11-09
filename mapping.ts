@@ -86,7 +86,7 @@ export function handleLent(event: Lent): void {
   }
   listing.address = lentParams.nftAddress;
   listing.lender = lentParams.lender;
-  listing.dailyPrice = lentParams.dailyPrice;
+  listing.dailyBorrowPrice = lentParams.dailyBorrowPrice;
   listing.maxDuration = lentParams.maxDuration;
   listing.nftPrice = lentParams.nftPrice;
   listing.tokenId = lentParams.tokenId;

@@ -9,7 +9,7 @@ type Listing @entity {
   lender: Bytes!
   tokenId: BigInt!
   maxDuration: BigInt!
-  dailyPrice: BigInt!
+  dailyBorrowPrice: BigInt!
   nftPrice: BigInt!
   rentStatus: Boolean!
   face: Face!
@@ -21,7 +21,7 @@ type Rental @entity {
   listingIndex: Listing!
   actualDuration: BigInt!
   borrowedAt: BigInt!
-  }
+}
 
 type Approval @entity {
   id: ID!
@@ -40,7 +40,7 @@ type ApprovedAll @entity {
 
 type User @entity {
   id: ID!
-  lending: [Listing!] 
+  lending: [Listing!]
   borrowing: [Rental!]
   faces: [Face!]
   approvals: [Approval!]
