@@ -228,6 +228,10 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
 
     // update details
     listing.isBorrowed = false;
+    delete rental.borrower;
+    delete rental.listingIndex;
+    delete rental.actualDuration;
+    delete rental.borrowedAt;
 
     // send collateral back for the qty of NFTs returned
     IERC20(resolver.getDai()).safeTransfer(msg.sender, listing.nftPrice);
@@ -252,7 +256,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     Listing storage listing = listings[rental.listingIndex];
 
     require(listing.lender == msg.sender, "not lender");
-    require(!listing.isBorrowed, "nft not lent out");
+    require(listing.isBorrowed, "nft not lent out");
 
     uint256 durationInDays = now.sub(rental.borrowedAt).div(86400);
     require(durationInDays > rental.actualDuration, "duration not exceeded");
@@ -271,6 +275,13 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
       listing.lender,
       listing.tokenId
     );
+
+    delete listing.lender;
+    delete listing.nftAddress;
+    delete listing.tokenId;
+    delete listing.maxDuration;
+    delete listing.dailyBorrowPrice;
+    delete listing.nftPrice;
   }
 
   function getListingCount() external view returns (uint256) {

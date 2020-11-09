@@ -1,15 +1,17 @@
 RentNft
-    √ should lend one NFT (672ms)
-    √ should lend multiple NFT (912ms)
-    √ should revert when actualDuration is higher than Max when renting out one NFT (425ms)
-    √ should rent one NFT (585ms)
-    √ should rent multiple NFTs (1020ms)
-    √ should return multiple NFTs (1649ms)
-    √ should allow lender to stop lending (799ms)
-    RETURN
-      √ should allow user to Return One NFT before duration exceeds (710ms)
-      √ should revert when duration exceeds & user tries to Return NFT (100ms)
-      √ should allow owner to claim collateral in case of default (250ms)
+  LEND
+    √ should lend one NFT (958ms)
+    √ should lend multiple NFT (1242ms)
+    √ should revert when actualDuration is higher than Max when renting out one NFT (854ms)
+    √ should allow lender to stop lending (343ms)
+  BORROW
+    √ should borrow one NFT (871ms)
+    √ should borrow multiple NFTs (917ms)
+  RETURN
+    √ should allow user to Return One NFT before duration exceeds (562ms)
+    √ should revert when duration exceeds & user tries to Return NFT (185ms)
+    √ should allow owner to claim collateral in case of default (408ms)
+    √ should return multiple NFTs (1414ms)
 
 
-  10 passing (12s)
+10 passing (19s)
