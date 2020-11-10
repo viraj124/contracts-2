@@ -13,8 +13,8 @@ import {
   ApprovedAll
 } from "./generated/schema";
 
-const createUser = (id: string): User => {
-  const user = new User(id);
+let createUser = (id: string): User => {
+  let user = new User(id);
   user.lending = new Array<string>();
   user.borrowing = new Array<string>();
   user.faces = new Array<string>();
@@ -23,7 +23,7 @@ const createUser = (id: string): User => {
   return user;
 };
 
-const resetBorrowedNft = (nft: Nft): Nft => {
+let resetBorrowedNft = (nft: Nft): Nft => {
   nft.borrower = null;
   nft.actualDuration = BigInt.fromI32(0);
   nft.borrowedAt = BigInt.fromI32(0);
@@ -35,17 +35,17 @@ const resetBorrowedNft = (nft: Nft): Nft => {
 // 2. variables from function scope not visible inside of .filter
 // 3. pushing directly into arrays won't work. Need to make a copy and then assign a copy to prop
 
-const getFaceId = (nftAddr: string, tokenId: string): string =>
+let getFaceId = (nftAddr: string, tokenId: string): string =>
   nftAddr + "::" + tokenId;
-const getNftId = (faceId: string, lender: string): string =>
+let getNftId = (faceId: string, lender: string): string =>
   faceId + "::" + lender;
-const getApprovedOneId = (
+let getApprovedOneId = (
   nftAddress: string,
   owner: string,
   approved: string,
   tokenId: string
 ): string => nftAddress + "::" + tokenId + "::" + owner + "::" + approved;
-const getApprovedAllId = (
+let getApprovedAllId = (
   nftAddress: string,
   owner: string,
   approved: string
@@ -53,7 +53,7 @@ const getApprovedAllId = (
 
 export function handleLent(event: Lent): void {
   // ! FACE MUST EXIST AT THIS POINT
-  const lentParams = event.params;
+  let lentParams = event.params;
   // imagine the following: contract A & contract B
   // contract A is the owner of the NFT
   // they lend it out. They don't see it in their Lend tab
@@ -67,12 +67,12 @@ export function handleLent(event: Lent): void {
   // entry in the graph. Number of entries is determined by how
   // many times it was lent out. The so-called NFT "hot-potato"
   // AKA mortgage backed security
-  const lenderAddress = lentParams.lender.toHex();
-  const faceId = getFaceId(
+  let lenderAddress = lentParams.lender.toHex();
+  let faceId = getFaceId(
     lentParams.nftAddress.toHex(),
     lentParams.tokenId.toHex()
   );
-  const nftId = getNftId(faceId, lenderAddress);
+  let nftId = getNftId(faceId, lenderAddress);
 
   // * ------------------------ NFT --------------------------
   // if the user previously lent out the NFT
@@ -101,7 +101,7 @@ export function handleLent(event: Lent): void {
   if (!lender) {
     lender = createUser(lenderAddress);
   }
-  const newLending = lender.lending;
+  let newLending = lender.lending;
   newLending.push(nftId);
   lender.lending = newLending;
   // * --------------------------------------------------------
@@ -110,7 +110,7 @@ export function handleLent(event: Lent): void {
   // ! production: remove the faces
   if (!lender.faces.includes(nftId)) {
     // ! FACE MUST EXIST. IF IT DOESN'T, IT WILL NOT HAVE A URI
-    const newFaces = lender.faces;
+    let newFaces = lender.faces;
     newFaces.push(faceId);
     lender.faces = newFaces;
   }
@@ -123,25 +123,25 @@ export function handleLent(event: Lent): void {
 
 export function handleBorrowed(event: Borrowed): void {
   // ! FACE MUST EXIST AT THIS POINT
-  const borrowedParams = event.params;
-  const faceId = getFaceId(
+  let borrowedParams = event.params;
+  let faceId = getFaceId(
     borrowedParams.nftAddress.toHex(),
     borrowedParams.tokenId.toHex()
   );
-  const nftId = getNftId(faceId, borrowedParams.lender.toHex());
-  const nft = Nft.load(nftId);
+  let nftId = getNftId(faceId, borrowedParams.lender.toHex());
+  let nft = Nft.load(nftId);
 
   nft.borrower = borrowedParams.borrower;
   nft.actualDuration = borrowedParams.actualDuration;
   nft.borrowedAt = borrowedParams.borrowedAt;
 
   // populating / creating borrower
-  const borrowerAddr = borrowedParams.borrower.toHex();
+  let borrowerAddr = borrowedParams.borrower.toHex();
   let borrower = User.load(borrowerAddr);
   if (!borrower) {
     borrower = createUser(borrowerAddr);
   }
-  const newBorrowing = borrower.borrowing;
+  let newBorrowing = borrower.borrowing;
   newBorrowing.push(nftId);
   borrower.borrowing = newBorrowing;
 
@@ -150,14 +150,14 @@ export function handleBorrowed(event: Borrowed): void {
 }
 
 export function handleReturned(event: Returned): void {
-  const returnParams = event.params;
-  const faceId = getFaceId(
+  let returnParams = event.params;
+  let faceId = getFaceId(
     returnParams.nftAddress.toHex(),
     returnParams.tokenId.toHex()
   );
-  const nftId = getNftId(faceId, returnParams.lender.toHex());
+  let nftId = getNftId(faceId, returnParams.lender.toHex());
   let nft = Nft.load(nftId);
-  const user = User.load(nft.borrower.toHex());
+  let user = User.load(nft.borrower.toHex());
 
   // -----------------------------------
   // nft = resetBorrowedNft(nft);
@@ -169,13 +169,13 @@ export function handleReturned(event: Returned): void {
   // ----------------------------------------------------
   // when the user returns the item, we remove it from their borrowing field
   // ! it does not see nftId in scope
-  const borrowing = user.borrowing.filter((item) => {
+  let borrowing = user.borrowing.filter((item) => {
     // ? how do I remove nftId declaration here?
-    const faceId = getFaceId(
+    let faceId = getFaceId(
       event.params.nftAddress.toHex(),
       event.params.tokenId.toHex()
     );
-    const nftId = getNftId(faceId, event.params.lender.toHex());
+    let nftId = getNftId(faceId, event.params.lender.toHex());
     return item !== nftId;
   });
   user.borrowing = borrowing;
@@ -192,21 +192,18 @@ export function handleReturned(event: Returned): void {
 // ! ------------------------- remove in prod -----------------------------------
 // gan face contract
 export function handleNewFace(event: NewFace): void {
-  const newFaceParams = event.params;
+  let newFaceParams = event.params;
   // ! ensure that event.address is the address of the NFT
-  const faceId = getFaceId(
-    event.address.toHex(),
-    newFaceParams.tokenId.toHex()
-  );
-  const face = new Face(faceId);
+  let faceId = getFaceId(event.address.toHex(), newFaceParams.tokenId.toHex());
+  let face = new Face(faceId);
   face.uri = newFaceParams.tokenURI;
 
-  const nftOwner = event.params.owner.toHex();
+  let nftOwner = event.params.owner.toHex();
   let user = User.load(nftOwner);
   if (!user) {
     user = createUser(nftOwner);
   }
-  const newFaces = user.faces;
+  let newFaces = user.faces;
   newFaces.push(faceId);
   user.faces = newFaces;
 
@@ -216,20 +213,20 @@ export function handleNewFace(event: NewFace): void {
 // ! --------------------------------------------------------------------------
 
 export function handleApprovalOne(event: ApprovalEvent): void {
-  const approvalParams = event.params;
-  const nftOwner = approvalParams.owner;
-  const approved = approvalParams.approved;
-  const tokenId = approvalParams.tokenId;
-  const nftOwnerHex = nftOwner.toHex();
+  let approvalParams = event.params;
+  let nftOwner = approvalParams.owner;
+  let approved = approvalParams.approved;
+  let tokenId = approvalParams.tokenId;
+  let nftOwnerHex = nftOwner.toHex();
 
   // ! check that the event.address is the NFT address (like above)
-  const approvalId = getApprovedOneId(
+  let approvalId = getApprovedOneId(
     event.address.toHex(),
     tokenId.toHex(),
     nftOwnerHex,
     approved.toHex()
   );
-  const approval = new ApprovalSchema(approvalId);
+  let approval = new ApprovalSchema(approvalId);
   approval.nftAddress = event.address;
   approval.owner = nftOwner;
   approval.approved = approved;
@@ -240,7 +237,7 @@ export function handleApprovalOne(event: ApprovalEvent): void {
   if (!user) {
     user = createUser(nftOwnerHex);
   }
-  const newApprovals = user.approvals;
+  let newApprovals = user.approvals;
   newApprovals.push(approvalId);
   user.approvals = newApprovals;
 
@@ -249,16 +246,16 @@ export function handleApprovalOne(event: ApprovalEvent): void {
 }
 
 export function handleApprovalAll(event: ApprovalForAll): void {
-  const nftOwner = event.params.owner;
-  const approved = event.params.operator;
-  const nftOwnerHex = nftOwner.toHex();
+  let nftOwner = event.params.owner;
+  let approved = event.params.operator;
+  let nftOwnerHex = nftOwner.toHex();
 
-  const approveAllId = getApprovedAllId(
+  let approveAllId = getApprovedAllId(
     event.address.toHex(),
     nftOwnerHex,
     approved.toHex()
   );
-  const approvedAll = new ApprovedAll(approveAllId);
+  let approvedAll = new ApprovedAll(approveAllId);
   approvedAll.nftAddress = event.address;
   approvedAll.owner = nftOwner;
   approvedAll.approved = approved;
@@ -267,7 +264,7 @@ export function handleApprovalAll(event: ApprovalForAll): void {
   if (user == null) {
     user = createUser(nftOwnerHex);
   }
-  const newApprovedAlls = user.approvedAll;
+  let newApprovedAlls = user.approvedAll;
   newApprovedAlls.push(approveAllId);
   user.approvedAll = newApprovedAlls;
 
