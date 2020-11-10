@@ -162,7 +162,9 @@ export function handleReturned(event: Returned): void {
 
   // if the nft does not exist in graph, then there is nothing to return
   // here is the original issue: https://trello.com/c/otKfPncH/57-solidity-contracts-returning-fails-the-graph
-  if (!nft) return;
+  // if (!nft) return;
+  // UPDATE: this was due to Return event specifying borrower twice
+  // for borrower and for lender
 
   // ----------------------------------------------------
   // when the user returns the item, we remove it from their borrowing field
