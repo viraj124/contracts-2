@@ -63,11 +63,16 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
   }
 
   /**
-  * @dev See {IERC721Receiver-onERC721Received}.
-  *
-  * Always returns `IERC721Receiver.onERC721Received.selector`.
-  */
-  function onERC721Received(address, address, uint256, bytes memory) public virtual override returns (bytes4) {
+   * @dev See {IERC721Receiver-onERC721Received}.
+   *
+   * Always returns `IERC721Receiver.onERC721Received.selector`.
+   */
+  function onERC721Received(
+    address,
+    address,
+    uint256,
+    bytes memory
+  ) public virtual override returns (bytes4) {
     return this.onERC721Received.selector;
   }
 
@@ -90,7 +95,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
       borrowPrice: _borrowPrice,
       borrowedAt: 0,
       nftPrice: _nftPrice
-      });
+    });
 
     // transfer nft to this contract. will fail if nft wasn't approved
     ERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
@@ -199,7 +204,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     ERC20(resolver.getDai()).safeTransfer(nft.borrower, nft.nftPrice);
 
     resetBorrow(nft);
-    emit Returned(_nftAddress, _tokenId, msg.sender, nft.borrower);
+    emit Returned(_nftAddress, _tokenId, msg.sender, nft.lender);
   }
 
   function returnNftMultiple(
