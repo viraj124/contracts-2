@@ -151,9 +151,7 @@ export function handleReturned(event: Returned): void {
   let listing = Listing.load(returnParams.lentIndex.toHex());
   listing.rentStatus = false;
   let rental = Rental.load(returnParams.rentIndex.toHex());
-  rental.borrower = null;
-  rental.actualDuration = BigInt.fromI32(0);
-  rental.borrowedAt = BigInt.fromI32(0);
+
   let user = User.load(rental.borrower.toHex());
 
   // -----------------------------------
@@ -169,6 +167,9 @@ export function handleReturned(event: Returned): void {
   borrowed.splice(borrowingIndex, 1);
 
   user.borrowing = borrowed;
+  rental.borrower = null;
+  rental.actualDuration = BigInt.fromI32(0);
+  rental.borrowedAt = BigInt.fromI32(0);
   // ----------------------------------------------------
 
   user.save();
