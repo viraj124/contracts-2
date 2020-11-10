@@ -157,31 +157,26 @@ export function handleReturned(event: Returned): void {
   );
   let nftId = getNftId(faceId, returnParams.lender.toHex());
   let nft = Nft.load(nftId);
-  let user = User.load(nft.borrower.toHex());
+  let borrowerAddress = returnParams.borrower.toHex();
+  let borrowerUser = User.load(borrowerAddress);
 
-  // -----------------------------------
-  // nft = resetBorrowedNft(nft);
-  nft.borrower = null;
-  nft.actualDuration = BigInt.fromI32(0);
-  nft.borrowedAt = BigInt.fromI32(0);
-  // -----------------------------------
+  // if the nft does not exist in graph, then there is nothing to return
+  // here is the original issue: https://trello.com/c/otKfPncH/57-solidity-contracts-returning-fails-the-graph
+  if (!nft) return;
 
   // ----------------------------------------------------
   // when the user returns the item, we remove it from their borrowing field
-  // ! it does not see nftId in scope
-  let borrowing = user.borrowing.filter((item) => {
-    // ? how do I remove nftId declaration here?
-    let faceId = getFaceId(
-      event.params.nftAddress.toHex(),
-      event.params.tokenId.toHex()
-    );
-    let nftId = getNftId(faceId, event.params.lender.toHex());
-    return item !== nftId;
-  });
-  user.borrowing = borrowing;
+  let borrowing = <string[]>borrowerUser.borrowing;
+  let borrowingIndex = borrowing.indexOf(nftId);
+  borrowing.splice(borrowingIndex, 1);
+
+  borrowerUser.borrowing = borrowing;
+  nft.borrower = null;
+  nft.actualDuration = BigInt.fromI32(0);
+  nft.borrowedAt = BigInt.fromI32(0);
   // ----------------------------------------------------
 
-  user.save();
+  borrowerUser.save();
   nft.save();
 }
 
