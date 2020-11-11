@@ -8,7 +8,6 @@ module.exports = async (_deployer, _network) => {
     const resolver = await RentNftAddressProvider.deployed();
 
     const token = await PaymentToken.deployed();
-    console.log(resolver);
     await resolver.setDai(token.address);
   }
 };
