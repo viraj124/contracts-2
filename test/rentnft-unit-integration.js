@@ -154,7 +154,7 @@ describe("RentNft", () => {
       rent.rentOne(unprivilegedAddress, face.address, tokenId, rentDuration, {
         from: unprivilegedAddress
       }),
-      "max duration exceeded"
+      "Max Duration exceeded"
     );
   });
 
