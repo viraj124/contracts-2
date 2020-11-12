@@ -59,6 +59,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     uint256 maxDuration; // max borrow duration in days
     uint256 dailyBorrowPrice; // how much the borrower has to pay irrevocably daily (per nft)
     uint256 nftPrice; // how much lender will receive as collateral if borrower does not return nft in time
+    address token; // lender should specify the token they want
     bool isBorrowed;
   }
   Listing[] public listings;
@@ -83,7 +84,8 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     uint256 _tokenId,
     uint256 _maxDuration,
     uint256 _dailyBorrowPrice,
-    uint256 _nftPrice
+    uint256 _nftPrice,
+    address _token 
   ) public nonReentrant {
     require(_nftAddress != address(0), "invalid nft address");
     require(_maxDuration > 0, "at least one day");
@@ -100,6 +102,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
         maxDuration: _maxDuration,
         dailyBorrowPrice: _dailyBorrowPrice,
         nftPrice: _nftPrice,
+        token: _token,
         isBorrowed: false
       })
     );
@@ -122,7 +125,8 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     uint256[] calldata _tokenIds,
     uint256[] calldata _maxDurations,
     uint256[] calldata _dailyBorrowPrice,
-    uint256[] calldata _nftPrices
+    uint256[] calldata _nftPrices,
+    address[] calldata _tokens
   ) external {
     require(_nftAddresses.length == _tokenIds.length, "not equal length");
     require(_tokenIds.length == _maxDurations.length, "not equal length");
@@ -131,6 +135,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
       "not equal length"
     );
     require(_dailyBorrowPrice.length == _nftPrices.length, "not equal length");
+    require(_nftPrices.length == _tokens.length, "not equal length");
 
     for (uint256 i = 0; i < _nftAddresses.length; i++) {
       lendOne(
@@ -138,7 +143,8 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
         _tokenIds[i],
         _maxDurations[i],
         _dailyBorrowPrice[i],
-        _nftPrices[i]
+        _nftPrices[i],
+        _tokens[i]
       );
     }
   }
@@ -157,13 +163,13 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     // ! will fail if wasn't approved
     // pay the NFT owner the borrow price
     uint256 borrowPrice = _actualDuration.mul(listing.dailyBorrowPrice);
-    IERC20(resolver.getDai()).safeTransferFrom(
+    IERC20(listing.token).safeTransferFrom(
       _borrower,
       listing.lender,
       borrowPrice
     );
     // collateral, our contracts acts as an escrow
-    IERC20(resolver.getDai()).safeTransferFrom(
+    IERC20(listing.token).safeTransferFrom(
       _borrower,
       address(this),
       listing.nftPrice
@@ -242,7 +248,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     delete borrow.borrowedAt;
 
     // send collateral back for the qty of NFTs returned
-    IERC20(resolver.getDai()).safeTransfer(msg.sender, listing.nftPrice);
+    IERC20(listing.token).safeTransfer(msg.sender, listing.nftPrice);
     emit Returned(
       borrow.listingIndex,
       _rentalIndex,
@@ -269,7 +275,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     uint256 durationInDays = now.sub(borrow.borrowedAt).div(86400);
     require(durationInDays > borrow.actualDuration, "duration not exceeded");
 
-    IERC20(resolver.getDai()).safeTransfer(msg.sender, listing.nftPrice);
+    IERC20(listing.token).safeTransfer(msg.sender, listing.nftPrice);
   }
 
   function stopLending(uint256 _listingIndex) public {
@@ -290,6 +296,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     delete listing.maxDuration;
     delete listing.dailyBorrowPrice;
     delete listing.nftPrice;
+    delete listing.token;
   }
 
   function getListingCount() external view returns (uint256) {
