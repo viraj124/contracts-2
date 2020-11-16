@@ -8,13 +8,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
 
-import "./RentNftAddressProvider.sol";
 
 contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  // TODO: if there are defaults, mark the address to forbid from borrowing
   event Lent(
     uint256 lentIndex,
     address indexed nftAddress,
@@ -72,11 +70,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
   }
   Borrow[] public borrows;
 
-  RentNftAddressProvider public resolver;
-
-  constructor(address _resolverAddress) {
-    resolver = RentNftAddressProvider(_resolverAddress);
-  }
+  constructor() {}
 
   // lend one nft that you own to be borrowable on Rent NFT
   function lendOne(
