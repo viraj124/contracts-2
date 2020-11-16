@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -74,7 +74,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
 
   RentNftAddressProvider public resolver;
 
-  constructor(address _resolverAddress) public {
+  constructor(address _resolverAddress) {
     resolver = RentNftAddressProvider(_resolverAddress);
   }
 
@@ -85,7 +85,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     uint256 _maxDuration,
     uint256 _dailyBorrowPrice,
     uint256 _nftPrice,
-    address _token 
+    address _token
   ) public nonReentrant {
     require(_nftAddress != address(0), "invalid nft address");
     require(_maxDuration > 0, "at least one day");
@@ -182,7 +182,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
         borrower: _borrower,
         listingIndex: _listingIndex,
         actualDuration: _actualDuration,
-        borrowedAt: now
+        borrowedAt: block.timestamp
       })
     );
 
@@ -201,7 +201,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
       _listingIndex,
       _borrower,
       listing.lender,
-      now,
+      block.timestamp,
       listing.dailyBorrowPrice,
       _actualDuration,
       listing.nftPrice
@@ -229,7 +229,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     Listing storage listing = listings[borrow.listingIndex];
 
     require(borrow.borrower == msg.sender, "not borrower");
-    uint256 durationInDays = now.sub(borrow.borrowedAt).div(86400);
+    uint256 durationInDays = block.timestamp.sub(borrow.borrowedAt).div(86400);
     require(durationInDays <= borrow.actualDuration, "duration exceeded");
 
     // we are returning back to the contract so that the owner does not have to add
@@ -272,7 +272,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     require(listing.lender == msg.sender, "not lender");
     require(listing.isBorrowed, "nft not lent out");
 
-    uint256 durationInDays = now.sub(borrow.borrowedAt).div(86400);
+    uint256 durationInDays = block.timestamp.sub(borrow.borrowedAt).div(86400);
     require(durationInDays > borrow.actualDuration, "duration not exceeded");
 
     IERC20(listing.token).safeTransfer(msg.sender, listing.nftPrice);

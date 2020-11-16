@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -15,7 +15,7 @@ contract GanFaceNft is ERC721, ReentrancyGuard {
     string tokenURI
   );
 
-  constructor() public ERC721("GANFACE", "GF") {}
+  constructor() ERC721("GANFACE", "GF") {}
 
   function awardGanFace(address _minter, string memory _tokenURI)
     public

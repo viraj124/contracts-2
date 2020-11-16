@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./configuration/AddressStorage.sol";
@@ -11,7 +11,7 @@ contract RentNftAddressProvider is Ownable, AddressStorage {
 
   uint8 private networkId;
 
-  constructor(uint8 _networkId) public {
+  constructor(uint8 _networkId) {
     networkId = _networkId;
   }
 
