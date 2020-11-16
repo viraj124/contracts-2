@@ -8,7 +8,7 @@ dataSources:
     name: RentNft
     network: goerli
     source:
-      address: "0x75CECD8f03BFC6E2899d155d5732638cE97E221c"
+      address: "0x46944d976b1E08D7d7591c9D28A45b2F36ac969C"
       abi: RentNft
       startBlock: 3731139
     mapping:
@@ -33,7 +33,7 @@ dataSources:
     name: GanFaceNft
     network: goerli
     source:
-      address: "0x19f911B243dc1F371Ed34eaB1E24a4545Fa704Ea"
+      address: "0xC257f085D1a7A2E6AFA29304F7Bd170ef3aA1868"
       abi: GanFaceNft
       startBlock: 3731125
     mapping:

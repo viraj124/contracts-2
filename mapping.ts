@@ -1,18 +1,7 @@
 import {BigInt} from "@graphprotocol/graph-ts";
 import {Lent, Borrowed, Returned} from "./generated/RentNft/RentNft";
-import {
-  NewFace,
-  Approval as ApprovalEvent,
-  ApprovalForAll
-} from "./generated/GanFaceNft/GanFaceNft";
-import {
-  Face,
-  Listing,
-  Rental,
-  User,
-  Approval as ApprovalSchema,
-  ApprovedAll
-} from "./generated/schema";
+import {NewFace} from "./generated/GanFaceNft/GanFaceNft";
+import {Face, Lending, Borrowing, User} from "./generated/schema";
 
 let createUser = (id: string): User => {
   let user = new User(id);
@@ -33,17 +22,6 @@ let getFaceId = (nftAddr: string, tokenId: string): string =>
   nftAddr + "::" + tokenId;
 let getNftId = (faceId: string, lender: string): string =>
   faceId + "::" + lender;
-let getApprovedOneId = (
-  nftAddress: string,
-  owner: string,
-  approved: string,
-  tokenId: string
-): string => nftAddress + "::" + tokenId + "::" + owner + "::" + approved;
-let getApprovedAllId = (
-  nftAddress: string,
-  owner: string,
-  approved: string
-): string => nftAddress + "::" + owner + "::" + approved;
 
 export function handleLent(event: Lent): void {
   // ! FACE MUST EXIST AT THIS POINT
@@ -66,32 +44,24 @@ export function handleLent(event: Lent): void {
     lentParams.nftAddress.toHex(),
     lentParams.tokenId.toHex()
   );
-  let listingId = lentParams.lentIndex;
+  let lendingId = lentParams.lentIndex;
 
   let nftId = getNftId(faceId, lenderAddress);
 
   // * ------------------------ NFT --------------------------
   // if the user previously lent out the NFT
-  let listing = Listing.load(listingId.toHex());
+  let lending = Lending.load(lendingId.toHex());
   // creating a new nft, if this is the first time
-  if (!listing) {
-    listing = new Listing(listingId.toHex());
+  if (!lending) {
+    lending = new lending(lendingId.toHex());
   }
-  listing.address = lentParams.nftAddress;
-  listing.lender = lentParams.lender;
-  listing.dailyBorrowPrice = lentParams.dailyBorrowPrice;
-  listing.maxDuration = lentParams.maxDuration;
-  listing.nftPrice = lentParams.nftPrice;
-  listing.tokenId = lentParams.tokenId;
-  listing.rentStatus = false;
-  // -----------------------------------
-  // // for safety
-  // // ! does not work something about the explicit case from null...
-  // // nft = resetBorrowedNft(nft);
-  // nft.borrower = null;
-  // nft.actualDuration = BigInt.fromI32(0);
-  // nft.borrowedAt = BigInt.fromI32(0);
-  // -----------------------------------
+  lending.address = lentParams.nftAddress;
+  lending.lender = lentParams.lender;
+  lending.dailyBorrowPrice = lentParams.dailyBorrowPrice;
+  lending.maxDuration = lentParams.maxDuration;
+  lending.nftPrice = lentParams.nftPrice;
+  lending.tokenId = lentParams.tokenId;
+  lending.rentStatus = false;
 
   // populating / creating lender
   let lender = User.load(lenderAddress);
@@ -99,7 +69,7 @@ export function handleLent(event: Lent): void {
     lender = createUser(lenderAddress);
   }
   let newLending = lender.lending;
-  newLending.push(listing.id);
+  newLending.push(lending.id);
   lender.lending = newLending;
   // * --------------------------------------------------------
 
@@ -111,10 +81,10 @@ export function handleLent(event: Lent): void {
     newFaces.push(faceId);
     lender.faces = newFaces;
   }
-  listing.face = faceId;
+  lending.face = faceId;
   // ! -------------------------------------------------------
 
-  listing.save();
+  lending.save();
   lender.save();
 }
 
@@ -122,15 +92,15 @@ export function handleBorrowed(event: Borrowed): void {
   // ! FACE MUST EXIST AT THIS POINT
   let borrowedParams = event.params;
 
-  let rentalId = borrowedParams.rentIndex;
-  let listingId = borrowedParams.lentIndex;
-  let listing = Listing.load(listingId.toHex());
-  listing.rentStatus = true;
-  let rental = new Rental(rentalId.toHex());
-  rental.borrower = borrowedParams.borrower;
-  rental.listingIndex = listing.id;
-  rental.actualDuration = borrowedParams.actualDuration;
-  rental.borrowedAt = rental.borrowedAt;
+  let borrowId = borrowedParams.rentIndex;
+  let lendingId = borrowedParams.lentIndex;
+  let lending = Lending.load(lendingId.toHex());
+  lending.rentStatus = true;
+  let borrowing = new Borrowing(borrowId.toHex());
+  borrowing.borrower = borrowedParams.borrower;
+  borrowing.lendingId = lending.id;
+  borrowing.actualDuration = borrowedParams.actualDuration;
+  borrowing.borrowedAt = borrowing.borrowedAt;
 
   // populating / creating borrower
   let borrowerAddr = borrowedParams.borrower.toHex();
@@ -139,49 +109,37 @@ export function handleBorrowed(event: Borrowed): void {
     borrower = createUser(borrowerAddr);
   }
   let newBorrowing = borrower.borrowing;
-  newBorrowing.push(rental.id);
+  newBorrowing.push(borrow.id);
   borrower.borrowing = newBorrowing;
-  listing.save();
-  rental.save();
+  lending.save();
+  borrowing.save();
   borrower.save();
 }
 
 export function handleReturned(event: Returned): void {
   let returnParams = event.params;
-  let listing = Listing.load(returnParams.lentIndex.toHex());
-  listing.rentStatus = false;
-  let rental = Rental.load(returnParams.rentIndex.toHex());
+  let lending = lending.load(returnParams.lentIndex.toHex());
+  lending.rentStatus = false;
+  let borrow = borrow.load(returnParams.rentIndex.toHex());
 
-  let user = User.load(rental.borrower.toHex());
+  let user = User.load(borrow.borrower.toHex());
 
-  // -----------------------------------
-  // nft = resetBorrowedNft(nft);
-
-  // -----------------------------------
-
-  // ----------------------------------------------------
   // when the user returns the item, we remove it from their borrowing field
-  // ! it does not see nftId in scope
   let borrowed = user.borrowing;
-  let borrowingIndex = borrowed.indexOf(rental.id);
+  let borrowingIndex = borrowed.indexOf(borrow.id);
   borrowed.splice(borrowingIndex, 1);
 
   user.borrowing = borrowed;
-  rental.borrower = null;
-  rental.actualDuration = BigInt.fromI32(0);
-  rental.borrowedAt = BigInt.fromI32(0);
+  borrow.borrower = null;
+  borrow.actualDuration = BigInt.fromI32(0);
+  borrow.borrowedAt = BigInt.fromI32(0);
   // ----------------------------------------------------
 
   user.save();
-  listing.save();
-  rental.save();
+  lending.save();
+  borrow.save();
 }
 
-// TODO: handler for the opposite of handleLent
-// i.e. for when the user removes the NFT from the platform
-// when we return the NFT back to them
-
-// ! ------------------------- remove in prod -----------------------------------
 // gan face contract
 export function handleNewFace(event: NewFace): void {
   let newFaceParams = event.params;
@@ -200,66 +158,5 @@ export function handleNewFace(event: NewFace): void {
   user.faces = newFaces;
 
   face.save();
-  user.save();
-}
-// ! --------------------------------------------------------------------------
-
-export function handleApprovalOne(event: ApprovalEvent): void {
-  let approvalParams = event.params;
-  let nftOwner = approvalParams.owner;
-  let approved = approvalParams.approved;
-  let tokenId = approvalParams.tokenId;
-  let nftOwnerHex = nftOwner.toHex();
-
-  // ! check that the event.address is the NFT address (like above)
-  let approvalId = getApprovedOneId(
-    event.address.toHex(),
-    tokenId.toHex(),
-    nftOwnerHex,
-    approved.toHex()
-  );
-  let approval = new ApprovalSchema(approvalId);
-  approval.nftAddress = event.address;
-  approval.owner = nftOwner;
-  approval.approved = approved;
-  approval.tokenId = tokenId;
-
-  // now update the user if exists. If not, create them
-  let user = User.load(nftOwnerHex);
-  if (!user) {
-    user = createUser(nftOwnerHex);
-  }
-  let newApprovals = user.approvals;
-  newApprovals.push(approvalId);
-  user.approvals = newApprovals;
-
-  approval.save();
-  user.save();
-}
-
-export function handleApprovalAll(event: ApprovalForAll): void {
-  let nftOwner = event.params.owner;
-  let approved = event.params.operator;
-  let nftOwnerHex = nftOwner.toHex();
-
-  let approveAllId = getApprovedAllId(
-    event.address.toHex(),
-    nftOwnerHex,
-    approved.toHex()
-  );
-  let approvedAll = new ApprovedAll(approveAllId);
-  approvedAll.nftAddress = event.address;
-  approvedAll.owner = nftOwner;
-  approvedAll.approved = approved;
-
-  let user = User.load(nftOwnerHex);
-  if (user == null) {
-    user = createUser(nftOwnerHex);
-  }
-  let newApprovedAlls = user.approvedAll;
-  newApprovedAlls.push(approveAllId);
-  user.approvedAll = newApprovedAlls;
-
-  approvedAll.save();
   user.save();
 }

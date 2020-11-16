@@ -3,46 +3,29 @@ type Face @entity {
   uri: String!
 }
 
-type Listing @entity {
+type Lending @entity {
   id: ID!
-  address: Bytes!
-  lender: Bytes!
+  nftAddress: Bytes!
   tokenId: BigInt!
-  maxDuration: BigInt!
+  lenderAddress: Bytes!
+  maxBorrowDuration: BigInt!
   dailyBorrowPrice: BigInt!
   nftPrice: BigInt!
-  rentStatus: Boolean!
+  borrowStatus: Boolean!
   face: Face!
 }
 
-type Rental @entity {
+type Borrowing @entity {
   id: ID!
-  borrower: Bytes!
-  listingIndex: Listing!
-  actualDuration: BigInt!
+  lendingId: Listing!
+  borrowerAddress: Bytes!
+  borrowDuration: BigInt!
   borrowedAt: BigInt!
-}
-
-type Approval @entity {
-  id: ID!
-  nftAddress: Bytes!
-  tokenId: BigInt!
-  owner: Bytes!
-  approved: Bytes!
-}
-
-type ApprovedAll @entity {
-  id: ID!
-  nftAddress: Bytes!
-  owner: Bytes!
-  approved: Bytes!
 }
 
 type User @entity {
   id: ID!
-  lending: [Listing!]
-  borrowing: [Rental!]
+  lending: [Lending!]
+  borrowing: [Borrowing!]
   faces: [Face!]
-  approvals: [Approval!]
-  approvedAll: [ApprovedAll!]
 }
