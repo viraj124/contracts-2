@@ -104,62 +104,44 @@ describe("RentNft", () => {
       expect(nft1.nftPrice).to.be.bignumber.eq(NFT_PRICE);
       expect(nft1.token).to.eq(erc20.address);
     });
-    tokenId++;
-    await rent.lendOne(
-      face.address,
-      tokenId,
-      MAX_DURATION,
-      BORROW_PRICE,
-      NFT_PRICE,
-      {from: firstOwnerAddress}
-    );
-    // rent
-    const rentDuration = "6"; // 6 days. Max is 5 days.
-    await expectRevert(
-      rent.rentOne(unprivilegedAddress, face.address, tokenId, rentDuration, {
-        from: unprivilegedAddress
-      }),
-      "Max Duration exceeded"
-    );
-  });
 
-  it("should rent one NFT", async () => {
-    const iniDaiBalanceRent = await dai.balanceOf(rent.address);
-    const iniDaiBalanceFOA = await dai.balanceOf(firstOwnerAddress);
-    const iniDaiBalanceUA = await dai.balanceOf(unprivilegedAddress);
+    it("should rent one NFT", async () => {
+      const iniDaiBalanceRent = await dai.balanceOf(rent.address);
+      const iniDaiBalanceFOA = await dai.balanceOf(firstOwnerAddress);
+      const iniDaiBalanceUA = await dai.balanceOf(unprivilegedAddress);
 
-    // unprivilidged account now rents the NFT
-    const rentDuration = "2"; // 2 days
-    await rent.rentOne(
-      unprivilegedAddress,
-      face.address,
-      tokenId,
-      rentDuration,
-      {
-        from: unprivilegedAddress
-      }
-    );
+      // unprivilidged account now rents the NFT
+      const rentDuration = "2"; // 2 days
+      await rent.rentOne(
+        unprivilegedAddress,
+        face.address,
+        tokenId,
+        rentDuration,
+        {
+          from: unprivilegedAddress
+        }
+      );
 
-    const nft = await rent.nfts(face.address, tokenId);
+      const nft = await rent.nfts(face.address, tokenId);
 
-    expect(nft.lender).to.eq(firstOwnerAddress);
-    expect(nft.borrower).to.eq(unprivilegedAddress);
-    expect(nft.maxDuration).to.be.bignumber.eq(MAX_DURATION);
-    expect(nft.actualDuration).to.be.bignumber.eq(rentDuration);
-    expect(nft.borrowPrice).to.be.bignumber.eq(BORROW_PRICE);
-    expect(nft.nftPrice).to.be.bignumber.eq(NFT_PRICE);
+      expect(nft.lender).to.eq(firstOwnerAddress);
+      expect(nft.borrower).to.eq(unprivilegedAddress);
+      expect(nft.maxDuration).to.be.bignumber.eq(MAX_DURATION);
+      expect(nft.actualDuration).to.be.bignumber.eq(rentDuration);
+      expect(nft.borrowPrice).to.be.bignumber.eq(BORROW_PRICE);
+      expect(nft.nftPrice).to.be.bignumber.eq(NFT_PRICE);
 
-    const finalDaiBalanceRent = await dai.balanceOf(rent.address);
-    expect(finalDaiBalanceRent.sub(iniDaiBalanceRent)).to.be.bignumber.eq(
-      NFT_PRICE
-    );
-    const finaDaiBalanceFOA = await dai.balanceOf(firstOwnerAddress);
-    // 1 DAI * 2 days = 2 DAI
-    expect(finaDaiBalanceFOA.sub(iniDaiBalanceFOA)).to.be.bignumber.eq("2");
-    // (1 DAI * 2 days) + 11 DAI (collateral) = 2 + 11 = 13
-    const finalDaiBalanceUA = await dai.balanceOf(unprivilegedAddress);
-    expect(iniDaiBalanceUA.sub(finalDaiBalanceUA)).to.be.bignumber.eq("13");
-  });
+      const finalDaiBalanceRent = await dai.balanceOf(rent.address);
+      expect(finalDaiBalanceRent.sub(iniDaiBalanceRent)).to.be.bignumber.eq(
+        NFT_PRICE
+      );
+      const finaDaiBalanceFOA = await dai.balanceOf(firstOwnerAddress);
+      // 1 DAI * 2 days = 2 DAI
+      expect(finaDaiBalanceFOA.sub(iniDaiBalanceFOA)).to.be.bignumber.eq("2");
+      // (1 DAI * 2 days) + 11 DAI (collateral) = 2 + 11 = 13
+      const finalDaiBalanceUA = await dai.balanceOf(unprivilegedAddress);
+      expect(iniDaiBalanceUA.sub(finalDaiBalanceUA)).to.be.bignumber.eq("13");
+    });
 
     it("should lend multiple NFT", async () => {
       const fakeTokenURI = "https://fake.ipfs.image.link";
