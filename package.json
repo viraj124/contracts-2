@@ -9,7 +9,7 @@
     "graph-remove-local": "graph remove --node http://localhost:8020/ nazariyv/rentnft",
     "graph-deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 nazariyv/rentnft",
     "compile": "truffle compile",
-    "test": "npx mocha --exit --recursive --timeout 200000",
+    "test": "truffle compile && npx mocha --exit --recursive --timeout 200000",
     "test:rentnft": "npm run test ./test/rentnft.test.js",
     "test:ganface": "npm run test ./test/ganface.test.js"
   },
