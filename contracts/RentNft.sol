@@ -143,7 +143,7 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     nft.borrowedAt = 0;
   }
 
-  function getAllLendingLength() external returns(uint256) {
+  function getAllLendingLength() external view returns (uint256) {
     return allLending.length;
   }
 }
