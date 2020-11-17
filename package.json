@@ -2,26 +2,17 @@
   "license": "MIT",
   "scripts": {
     "prettier:solidity": "./node_modules/.bin/prettier --write contracts/*.sol && ./node_modules/.bin/prettier --write contracts/**/*.sol",
-    "graph-codegen": "graph codegen",
-    "graph-build": "graph build",
-    "graph-deploy": "graph deploy nazariyv/rentnft --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/",
-    "graph-create-local": "graph create --node http://localhost:8020/ nazariyv/rentnft",
-    "graph-remove-local": "graph remove --node http://localhost:8020/ nazariyv/rentnft",
-    "graph-deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 nazariyv/rentnft",
     "compile": "truffle compile",
-    "test": "npx mocha --exit --recursive --timeout 200000",
+    "test": "truffle compile && npx mocha --exit --recursive --timeout 200000",
     "test:rentnft": "npm run test ./test/rentnft-unit-integration.js"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.2.0",
     "@truffle/hdwallet-provider": "^1.0.44",
     "node-fetch": "^2.6.1",
-    "truffle": "^5.1.44",
-    "truffle-flattener": "^1.5.0"
+    "truffle": "^5.1.44"
   },
   "devDependencies": {
-    "@graphprotocol/graph-cli": "^0.19.0",
-    "@graphprotocol/graph-ts": "^0.19.0",
     "@openzeppelin/test-environment": "^0.1.6",
     "@openzeppelin/test-helpers": "^0.5.9",
     "chai": "^4.2.0",
