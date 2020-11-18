@@ -9,218 +9,215 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-
 contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
   using Counters for Counters.Counter;
 
+  uint256 private SECONDS_IN_A_DAY = 86400;
+
   event Lent(
-    uint256 lendingId,
+    uint256 id,
     address indexed nftAddress,
     uint256 indexed tokenId,
     address indexed lenderAddress,
-    uint256 maxBorrowDuration,
-    uint256 dailyBorrowPrice,
-    uint256 nftPrice
+    uint256 maxRentDuration,
+    uint256 dailyRentPrice,
+    uint256 nftPrice,
+    address paymentTokenAddress
   );
 
-  event Borrowed(
-    uint256 borrowingId,
+  event Rented(
+    uint256 id,
     uint256 indexed lendingId,
-    address indexed borrowerAddress,
-    uint256 borrowDuration,
-    uint256 borrowedAt
+    address indexed renterAddress,
+    uint256 rentDuration,
+    uint256 rentedAt
   );
 
   event Returned(
     uint256 lendingId,
-    uint256 borrowingId,
+    uint256 rentingId,
     address indexed nftAddress,
     uint256 indexed tokenId
   );
 
-  // required to avoid the contract level bug
-  // Address A lends their NFT
-  // Address B borrows the NFT and immediately lends it
-  // previously, the collateral would be locked from address A
-  // as address B's actions would overwrite the original lender
   struct Lending {
-    uint256 lendingId;
     address lenderAddress;
     address nftAddress;
     uint256 tokenId;
-    uint256 maxBorrowDuration; // max borrow duration in days
-    uint256 dailyBorrowPrice; // how much the borrower has to pay irrevocably daily (per nft)
-    uint256 nftPrice; // how much lender will receive as collateral if borrower does not return nft in time
+    uint256 maxRentDuration; // in days
+    uint256 dailyRentPrice; // how much the renter has to pay irrevocably daily (per nft)
+    uint256 nftPrice; // how much lender will receive as collateral if renter does not return the nft in time
     address paymentTokenAddress;
-    bool isBorrowed;
+    uint256 isRented; // uint256 so that we know how many times this has been re-lent
   }
-  mapping(uint256 => Lending) public lendings;
 
-  struct Borrowing {
-    uint256 borrowingId;
-    address borrowerAddress;
-    uint256 lendingId; // corresponding index in lendings
-    uint256 borrowDuration; // actual duration borrower will have the NFT for
-    uint256 borrowedAt; // time at which nft is borrowed
+  struct Renting {
+    uint256 lendingId;
+    address renterAddress;
+    uint256 rentDuration; // actual duration renter will have the NFT for
+    uint256 rentedAt;
   }
-  mapping(uint256 => Borrowing) public borrowings;
 
-  constructor() {}
+  mapping(uint256 => Lending) private lendings;
+  mapping(uint256 => Renting) private rentings;
 
-  // lend one nft that you own to be borrowable on Rent NFT
+  Counters.Counter private lastLendingId = Counters.Counter({_value: 1});
+  Counters.Counter private lastRentingId = Counters.Counter({_value: 1});
+
   function lendOne(
     address _nftAddress,
     uint256 _tokenId,
-    uint256 _maxBorrowDuration,
-    uint256 _dailyBorrowPrice,
+    uint256 _maxRentDuration,
+    uint256 _dailyRentPrice,
     uint256 _nftPrice,
-    address _paymentToken
+    address _paymentTokenAddress
   ) public nonReentrant {
     require(_nftAddress != address(0), "invalid nft address");
-    require(_maxBorrowDuration > 0, "at least one day");
-
-    // transfer nft to this contract. will fail if nft wasn't approved
+    require(_maxRentDuration > 0, "at least one day");
 
     IERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
 
-    uint256 lendingId = lendings.length + 1;
+    uint256 __lastLendingId = lastLendingId.current();
 
-    lendings.push(
-      Lending({
-        lendingId: lendingId,
-        lenderAddress: msg.sender,
-        nftAddress: _nftAddress,
-        tokenId: _tokenId,
-        maxBorrowDuration: _maxBorrowDuration,
-        dailyBorrowPrice: _dailyBorrowPrice,
-        nftPrice: _nftPrice,
-        paymentToken: _paymentToken,
-        isBorrowed: false
-      })
-    );
+    lendings[__lastLendingId] = Lending({
+      lenderAddress: msg.sender,
+      nftAddress: _nftAddress,
+      tokenId: _tokenId,
+      maxRentDuration: _maxRentDuration,
+      dailyRentPrice: _dailyRentPrice,
+      nftPrice: _nftPrice,
+      paymentTokenAddress: _paymentTokenAddress,
+      isRented: 0
+    });
+
     emit Lent(
-      lendingId,
+      __lastLendingId,
       _nftAddress,
       _tokenId,
       msg.sender,
-      _maxBorrowDuration,
-      _dailyBorrowPrice,
-      _nftPrice
+      _maxRentDuration,
+      _dailyRentPrice,
+      _nftPrice,
+      _paymentTokenAddress
     );
+
+    lastLendingId.increment();
   }
 
-  // lend multiple nfts that you own to be borrowable by Rent NFT
-  // for gas saving
   function lendMultiple(
     address[] calldata _nftAddresses,
     uint256[] calldata _tokenIds,
-    uint256[] calldata _maxBorrowDurations,
-    uint256[] calldata _dailyBorrowPrice,
+    uint256[] calldata _maxRentDurations,
+    uint256[] calldata _dailyRentPrice,
     uint256[] calldata _nftPrices,
-    address[] calldata _tokens
+    address[] calldata _paymentTokenAddresses
   ) external {
     require(_nftAddresses.length == _tokenIds.length, "not equal length");
-    require(_tokenIds.length == _maxBorrowDurations.length, "not equal length");
+    require(_tokenIds.length == _maxRentDurations.length, "not equal length");
     require(
-      _maxBorrowDurations.length == _dailyBorrowPrice.length,
+      _maxRentDurations.length == _dailyRentPrice.length,
       "not equal length"
     );
-    require(_dailyBorrowPrice.length == _nftPrices.length, "not equal length");
-    require(_nftPrices.length == _tokens.length, "not equal length");
+    require(_dailyRentPrice.length == _nftPrices.length, "not equal length");
+    require(
+      _nftPrices.length == _paymentTokenAddresses.length,
+      "not equal length"
+    );
 
     for (uint256 i = 0; i < _nftAddresses.length; i++) {
       lendOne(
         _nftAddresses[i],
         _tokenIds[i],
-        _maxBorrowDurations[i],
-        _dailyBorrowPrice[i],
+        _maxRentDurations[i],
+        _dailyRentPrice[i],
         _nftPrices[i],
-        _tokens[i]
+        _paymentTokenAddresses[i]
       );
     }
   }
 
-  function borrowOne(
-    address _borrowerAddress,
+  function rentOne(
+    address _renterAddress,
     uint256 _lendingId,
-    uint256 _borrowDuration
+    uint256 _rentDuration
   ) public nonReentrant {
     Lending storage lending = lendings[_lendingId];
     require(lending.lenderAddress != address(0), "could not find an nft");
-    require(!lending.isBorrowed, "nft already borrowed");
-    require(_borrowerAddress != lending.lenderAddress, "can't borrow own nft");
-    require(_borrowDuration <= lending.maxBorrowDuration, "max duration exceeded");
+    require(lending.isRented == 0, "nft already rented");
+    require(_renterAddress != lending.lenderAddress, "can't rent own nft");
+    require(_rentDuration <= lending.maxRentDuration, "max duration exceeded");
 
-    // ! will fail if wasn't approved
-    // pay the NFT owner the borrow price
-    uint256 borrowPrice = _borrowDuration.mul(lending.dailyBorrowPrice);
+    // TODO: this should go to the contract as an escrow
+    // on return, or on collateral claim, we either give
+    // the lender the portion of the amounts, or all of them
+    uint256 rentPrice = _rentDuration.mul(lending.dailyRentPrice);
     IERC20(lending.paymentTokenAddress).safeTransferFrom(
-      _borrowerAddress,
+      _renterAddress,
       lending.lenderAddress,
-      borrowPrice
+      rentPrice
     );
-    // collateral, our contracts acts as an escrow
     IERC20(lending.paymentTokenAddress).safeTransferFrom(
-      _borrowerAddress,
+      _renterAddress,
       address(this),
       lending.nftPrice
     );
 
-    uint256 borrowedAt = block.timestamp;
-    uint256 borrowingId = borrowings.length + 1;
+    uint256 rentedAt = block.timestamp;
+    uint256 __lastRentingId = lastRentingId.current();
 
-    // save details
-    lending.isBorrowed = true;
-    borrowings.push(
-      Borrowing({
-        borrowingId: borrowingId,
-        borrowerAddress: _borrowerAddress,
-        lendingId: _lendingId,
-        borrowDuration: _borrowDuration,
-        borrowedAt: borrowedAt
-      })
-    );
+    lending.isRented = lending.isRented + 1;
+    rentings[__lastRentingId] = Renting({
+      renterAddress: _renterAddress,
+      lendingId: _lendingId,
+      rentDuration: _rentDuration,
+      rentedAt: rentedAt
+    });
 
-    // transfer NFT to borrower
     IERC721(lending.nftAddress).safeTransferFrom(
       address(this),
-      _borrowerAddress,
+      _renterAddress,
       lending.tokenId
     );
 
-    emit Borrowed(
-      borrowingId,
-      lending.lendingId,
-      _borrowerAddress,
-      _borrowDuration,
-      borrowedAt
+    emit Rented(
+      __lastRentingId,
+      _lendingId,
+      _renterAddress,
+      _rentDuration,
+      rentedAt
     );
+
+    lastRentingId.increment();
   }
 
-  function borrowMultiple(
-    address _borrowerAddress,
+  function rentMultiple(
+    address _renterAddress,
     uint256[] calldata _lendingIds,
-    uint256[] calldata _borrowDurations
+    uint256[] calldata _rentDurations
   ) external {
-    require(
-      _lendingIds.length == _borrowDurations.length,
-      "not equal length"
-    );
+    require(_lendingIds.length == _rentDurations.length, "not equal length");
 
     for (uint256 i = 0; i < _lendingIds.length; i++) {
-      borrowOne(_borrowerAddress, _lendingIds[i], _borrowDurations[i]);
+      rentOne(_renterAddress, _lendingIds[i], _rentDurations[i]);
     }
   }
 
-  function returnOne(uint256 _borrowingId) public nonReentrant {
-    Borrowing storage borrowing = borrowings[_borrowingId];
-    Lending storage lending = lendings[borrowing.lendingId];
+  function returnOne(uint256 _rentingId) public nonReentrant {
+    Renting storage renting = rentings[_rentingId];
+    Lending storage lending = lendings[renting.lendingId];
 
-    require(borrowing.borrowerAddress == msg.sender, "not borrower");
-    uint256 durationInDays = block.timestamp.sub(borrowing.borrowedAt).div(86400);
-    require(durationInDays <= borrowing.borrowDuration, "duration exceeded");
+    require(lending.isRented > 0, "is not rented");
+    require(renting.renterAddress == msg.sender, "not renter");
+    uint256 durationInDays = block.timestamp.sub(renting.rentedAt).div(
+      SECONDS_IN_A_DAY
+    );
+    require(durationInDays <= renting.rentDuration, "duration exceeded");
+
+    // update details
+    lending.isRented = lending.isRented - 1;
+    delete rentings[_rentingId];
 
     // we are returning back to the contract so that the owner does not have to add
     // it multiple times thus incurring the transaction costs
@@ -229,48 +226,50 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
       address(this),
       lending.tokenId
     );
+    IERC20(lending.paymentTokenAddress).safeTransfer(
+      msg.sender,
+      lending.nftPrice
+    );
 
-    // update details
-    lending.isBorrowed = false;
-    delete borrowing.borrowerAddress;
-    delete borrowing.lendingId;
-    delete borrowing.borrowDuration;
-    delete borrowing.borrowedAt;
-
-    // send collateral back for the qty of NFTs returned
-    IERC20(lending.paymentTokenAddress).safeTransfer(msg.sender, lending.nftPrice);
     emit Returned(
-      borrowing.lendingId,
-      _borrowingId,
+      renting.lendingId,
+      _rentingId,
       lending.nftAddress,
       lending.tokenId
     );
   }
 
-  function returnMultiple(uint256[] calldata _borrowingIds) external {
-    for (uint256 i = 0; i < _borrowingIds.length; i++) {
-      returnOne(_borrowingIds[i]);
+  function returnMultiple(uint256[] calldata _rentingIds) external {
+    for (uint256 i = 0; i < _rentingIds.length; i++) {
+      returnOne(_rentingIds[i]);
     }
   }
 
-  function claimCollateral(uint256 _borrowingId) public nonReentrant {
-    Borrowing storage borrowing = borrowings[_borrowingId];
-    Lending storage lending = lendings[borrowing.lendingId];
+  function claimCollateral(uint256 _rentingId) public nonReentrant {
+    Renting storage renting = rentings[_rentingId];
+    Lending storage lending = lendings[renting.lendingId];
 
     require(lending.lenderAddress == msg.sender, "not lender");
-    require(lending.isBorrowed, "nft not borrowed out");
+    require(lending.isRented > 0, "nft not rented out");
 
-    uint256 durationInDays = block.timestamp.sub(borrowing.borrowedAt).div(86400);
-    require(durationInDays > borrowing.borrowDuration, "duration not exceeded");
+    uint256 durationInDays = block.timestamp.sub(renting.rentedAt).div(
+      SECONDS_IN_A_DAY
+    );
+    require(durationInDays > renting.rentDuration, "duration not exceeded");
 
-    IERC20(lending.paymentTokenAddress).safeTransfer(msg.sender, lending.nftPrice);
+    IERC20(lending.paymentTokenAddress).safeTransfer(
+      msg.sender,
+      lending.nftPrice
+    );
+
+    lending.isRented = lending.isRented - 1;
   }
 
   function stopLending(uint256 _lendingId) public {
     Lending storage lending = lendings[_lendingId];
 
     require(lending.lenderAddress == msg.sender, "not lender");
-    require(!lending.isBorrowed, "nft borrowed currently");
+    require(lending.isRented == 0, "nft rented currently");
 
     IERC721(lending.nftAddress).safeTransferFrom(
       address(this),
@@ -279,13 +278,5 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     );
 
     delete lendings[_lendingId];
-  }
-
-  function getLendingLength() external view returns (uint256) {
-    return lendings.length;
-  }
-
-  function getBorrowingLength() external view returns (uint256) {
-    return borrowings.length;
   }
 }
