@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.0;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
+import "../node_modules/@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
 
 contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
   using SafeMath for uint256;
@@ -71,6 +71,9 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     require(_paymentTokenAddress != address(0), "invalid payment token");
     require(_maxRentDuration > 0, "at least one day");
 
+    // edge-cases analysis
+    // 1. if I have lent out and try to lend out again. fail: since the nft was already transferred
+
     IERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
 
     LendingRenting storage all = lendingRenting[_nftAddress][_tokenId];
@@ -128,6 +131,14 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     uint256 _tokenId,
     uint256 _rentDuration
   ) public nonReentrant {
+    // edge-cases analysis
+    // 1. what if I rent, immediately lend, and immediately borrow from myself
+    // - rent and lend steps will work with no issue; last rent step will fail
+    // - this is because we have a require here that the currentLender != msg.sender
+    // 2. acc A lends, acc B rents, acc B lends with maxDuration higher than original
+    // - TODO: this is currently allowed, I strongly believe it should not be. Since this
+    // increaes the risk of the platform
+
     LendingRenting storage all = lendingRenting[_nftAddress][_tokenId];
 
     (uint256 numOfLenders, , bool isRented) = _isRented(_nftAddress, _tokenId);
@@ -198,8 +209,8 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
       _nftAddress,
       _tokenId
     );
-    uint256 numOfRentersLess1 = numOfRenters - 1;
     require(isRented, "is not rented");
+    uint256 numOfRentersLess1 = numOfRenters - 1;
     require(
       all.renting.renterAddress[numOfRentersLess1] == msg.sender,
       "not renter"
@@ -213,10 +224,9 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
       "duration exceeded"
     );
 
-    // TODO: what happens to lending array if there is more than one lender, at this point?
     _deleteLastRenting(_nftAddress, _tokenId);
 
-    // - if this is the second lender, then we return the NFT back to them
+    // - if this is not the original lender, then we return the NFT back to them
     // so that they get a chance to return this NFT back to the original owner.
     // At the same time, we delete their lending entries from the arrays
     address sendNftBackTo;
@@ -253,9 +263,8 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
     LendingRenting storage all = lendingRenting[_nftAddress][_tokenId];
 
     (uint256 numOfLenders, , bool isRented) = _isRented(_nftAddress, _tokenId);
-    uint256 numOfLendersLess1 = numOfLenders - 1;
-
     require(isRented, "nft not rented out");
+    uint256 numOfLendersLess1 = numOfLenders - 1;
     require(
       all.lending.lenderAddress[numOfLendersLess1] == msg.sender,
       "not lender"
