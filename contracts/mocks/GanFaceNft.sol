@@ -17,7 +17,7 @@ contract GanFaceNft is ERC721, ReentrancyGuard {
 
   constructor() ERC721("GANFACE", "GF") {}
 
-  function awardGanFace(address _minter, string memory _tokenURI)
+  function awardGanFace(string memory _tokenURI)
     public
     nonReentrant
     returns (uint256)
@@ -25,10 +25,10 @@ contract GanFaceNft is ERC721, ReentrancyGuard {
     __tokenIds.increment();
 
     uint256 newItemId = __tokenIds.current();
-    _mint(_minter, newItemId);
+    _mint(msg.sender, newItemId);
     _setTokenURI(newItemId, _tokenURI);
 
-    emit NewFace(_minter, newItemId, _tokenURI);
+    emit NewFace(msg.sender, newItemId, _tokenURI);
 
     return newItemId;
   }

@@ -7,30 +7,31 @@ import "../node_modules/@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
+import "./ChiGasSaver.sol";
 
-contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
-  using SafeMath for uint256;
+contract RentNft is ReentrancyGuard, Ownable, ERC721Holder, ChiGasSaver {
   using SafeERC20 for IERC20;
 
-  uint256 private constant SECONDS_IN_A_DAY = 86400;
-  uint256 private constant MAX_RE_LENDING = 4;
+  // 256 bits -> 32 bytes
+  // address - 20 byte value -> 160 bits
+  uint32 private constant SECONDS_IN_A_DAY = 86400;
 
   event Lent(
     address indexed nftAddress,
     uint256 indexed tokenId,
     address indexed lenderAddress,
-    uint256 maxRentDuration,
-    uint256 dailyRentPrice,
-    uint256 nftPrice,
-    address paymentTokenAddress
+    uint16 maxRentDuration,
+    uint32 dailyRentPrice,
+    uint32 nftPrice,
+    uint8 paymentTokenAddress
   );
 
   event Rented(
     address indexed nftAddress,
     uint256 indexed tokenId,
     address indexed renterAddress,
-    uint256 rentDuration,
-    uint256 rentedAt
+    uint16 rentDuration,
+    uint32 rentedAt
   );
 
   event Returned(
@@ -40,64 +41,76 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder {
   );
 
   struct Lending {
+    // 160 bits
     address lenderAddress;
-    uint256 maxRentDuration;
-    uint256 dailyRentPrice;
-    uint256 nftPrice;
-    address paymentTokenAddress;
+    // 176 bits
+    uint16 maxRentDuration;
+    // 208 bits
+    uint32 dailyRentPrice;
+    // 240 bits
+    uint32 nftPrice;
+    // 248 bits
+    uint8 paymentToken;
+    // 256 bits
+    uint8 id;
   }
 
   struct Renting {
+    // 160 bits
     address renterAddress;
-    uint256 rentDuration;
-    uint256 rentedAt;
+    // 176 bits
+    uint16 rentDuration;
+    // 198 bits
+    uint32 rentedAt;
   }
 
   struct LendingRenting {
-    Lending[MAX_RE_LENDING] lending;
-    Renting[MAX_RE_LENDING] renting;
+    uint8[16] lending;
+    uint8[16] renting;
   }
 
-  mapping(address => mapping(uint256 => LendingRenting)) private lendingRenting;
+  // keccak256(abi.encodePacked(nft, tokenId, lendingId)) => Lending
+  mapping(bytes => Lending) private lendings;
+  // keccak256(abi.encodePacked(nft, tokenId, rentingId)) => Lending
+  mapping(bytes => Renting) private rentings;
+  // keccak256(abi.enocdePacked(nft, tokenId)) => lendingId => true / false
+  mapping(bytes => LendingRenting) private lendingRenting;
 
   function lendOne(
-    address _nftAddress,
+    IERC721 _nftAddress,
     uint256 _tokenId,
-    uint256 _maxRentDuration,
-    uint256 _dailyRentPrice,
-    uint256 _nftPrice,
-    address _paymentTokenAddress
+    uint16 _maxRentDuration,
+    uint32 _dailyRentPrice,
+    uint32 _nftPrice,
+    uint8 _paymentToken,
+    address payable _gasSponsor
   ) public nonReentrant {
-    require(_nftAddress != address(0), "invalid nft address");
-    require(_paymentTokenAddress != address(0), "invalid payment token");
     require(_maxRentDuration > 0, "at least one day");
-
-    LendingRenting storage all = lendingRenting[_nftAddress][_tokenId];
-    require(all.lending.length < MAX_RE_LENDING, "max re-lending exceeded");
 
     // edge-cases analysis
     // 1. if I have lent out and try to lend out again. fail: since the nft was already transferred
 
-    IERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
+    // 120k gas ...
+    _nftAddress.safeTransferFrom(msg.sender, address(this), _tokenId);
 
-    Lending memory lending = Lending({
+    // 29.7k gas
+    lendings[abi.encodePacked(_nftAddress, _tokenId, uint8(0))] = Lending({
+      id: uint8(0),
       lenderAddress: msg.sender,
       maxRentDuration: _maxRentDuration,
       dailyRentPrice: _dailyRentPrice,
       nftPrice: _nftPrice,
-      paymentTokenAddress: _paymentTokenAddress
+      paymentToken: _paymentToken
     });
 
-    all.lending[all.lending.length] = lending;
-
     emit Lent(
-      _nftAddress,
+      address(_nftAddress),
       _tokenId,
       msg.sender,
       _maxRentDuration,
       _dailyRentPrice,
       _nftPrice,
-      _paymentTokenAddress
+      _paymentToken
     );
   }
 

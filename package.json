@@ -11,7 +11,8 @@
     "compile": "truffle compile",
     "test": "truffle compile && npx mocha --exit --recursive --timeout 200000",
     "test:rentnft": "npm run test ./test/rentnft.test.js",
-    "test:ganface": "npm run test ./test/ganface.test.js"
+    "test:ganface": "npm run test ./test/ganface.test.js",
+    "estimate-gas": "truffle deploy --network development --reset && truffle exec scripts/estimate_gas.js"
   },
   "dependencies": {
     "@openzeppelin/contracts": "3.1.0-solc-0.7",
@@ -26,6 +27,7 @@
     "@openzeppelin/test-environment": "^0.1.6",
     "@openzeppelin/test-helpers": "^0.5.9",
     "chai": "^4.2.0",
+    "chalk": "^4.1.0",
     "husky": "^4.3.0",
     "lint-staged": ">=10",
     "mocha": "^8.2.0",
