@@ -6,6 +6,7 @@ const PaymentToken = artifacts.require("PaymentToken");
 const Faucet = artifacts.require("Faucet");
 const RentNft = artifacts.require("RentNft");
 
+const log = console.log;
 const divider = "----------------------------------------";
 
 // mint a face from one account
@@ -30,7 +31,7 @@ const mintFace = async ({face}) => {
 };
 
 const main = async () => {
-  console.log(divider);
+  log(divider);
 
   const {face, pmtToken, rent} = await init();
 
@@ -67,19 +68,16 @@ const main = async () => {
     chalkColor = "green";
   }
 
-  console.log("lendOne gasEstimate:", chalk[chalkColor].bold(gasEstimate));
+  log("lendOne gasEstimate:", chalk[chalkColor].bold(gasEstimate));
 
   if (prevGasEstimate) {
     const prevColor = prevGasEstimate > gasEstimate ? "green" : "red";
-    console.log(
-      "lendOne prev gasEstimate:",
-      chalk[prevColor].bold(prevGasEstimate)
-    );
-    console.log(
+    log("lendOne prev gasEstimate:", chalk[prevColor].bold(prevGasEstimate));
+    log(
       "lendOne diff:",
       chalk[prevColor].bold((gasEstimate - prevGasEstimate).toFixed(2))
     );
-    console.log(
+    log(
       "lendOne ",
       chalk[prevColor].bold(
         prevGasEstimate > gasEstimate
@@ -90,7 +88,7 @@ const main = async () => {
     );
   }
 
-  console.log(divider);
+  log(divider);
 };
 
 module.exports = () => {
