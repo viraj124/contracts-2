@@ -6,6 +6,8 @@ const PaymentToken = artifacts.require("PaymentToken");
 const Faucet = artifacts.require("Faucet");
 const RentNft = artifacts.require("RentNft");
 
+const divider = "----------------------------------------";
+
 // mint a face from one account
 // lend a face from that same account, estimate gas
 
@@ -28,6 +30,8 @@ const mintFace = async ({face}) => {
 };
 
 const main = async () => {
+  console.log(divider);
+
   const {face, pmtToken, rent} = await init();
 
   await mintFace({face});
@@ -47,12 +51,12 @@ const main = async () => {
   let prevGasEstimate = "";
 
   try {
-    prevGasEstimate = Number(fs.readFileSync("estimate-gas.txt"));
+    prevGasEstimate = Number(fs.readFileSync("estimate-gas/renft/lendOne.txt"));
   } catch (err) {
     console.error(err);
   }
 
-  fs.writeFileSync("estimate-gas.txt", gasEstimate);
+  fs.writeFileSync("estimate-gas/renft/lendOne.txt", gasEstimate);
 
   let chalkColor = "";
   if (gasEstimate > 100000) {
@@ -73,7 +77,7 @@ const main = async () => {
     );
     console.log(
       "lendOne diff:",
-      chalk[prevColor].bold(Math.abs(prevGasEstimate - gasEstimate).toFixed(2))
+      chalk[prevColor].bold((gasEstimate - prevGasEstimate).toFixed(2))
     );
     console.log(
       "lendOne ",
@@ -85,14 +89,14 @@ const main = async () => {
       "%"
     );
   }
+
+  console.log(divider);
 };
 
 module.exports = () => {
   main()
     .then(() => {
-      console.log("---------------");
       process.exit(0);
-      console.log("---------------");
     })
     .catch((err) => {
       console.error(err);
