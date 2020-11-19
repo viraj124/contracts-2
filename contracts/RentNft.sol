@@ -15,11 +15,13 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder, ChiGasSaver {
   // 256 bits -> 32 bytes
   // address - 20 byte value -> 160 bits
   uint32 private constant SECONDS_IN_A_DAY = 86400;
+  uint256 private id = 1;
 
   event Lent(
     address indexed nftAddress,
     uint256 indexed tokenId,
     address indexed lenderAddress,
+    uint256 id,
     uint16 maxRentDuration,
     uint32 dailyRentPrice,
     uint32 nftPrice,
@@ -51,8 +53,6 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder, ChiGasSaver {
     uint32 nftPrice;
     // 248 bits
     uint8 paymentToken;
-    // 256 bits
-    uint8 id;
   }
 
   struct Renting {
@@ -65,16 +65,12 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder, ChiGasSaver {
   }
 
   struct LendingRenting {
-    uint8[16] lending;
-    uint8[16] renting;
+    Lending lending;
+    Renting renting;
   }
 
-  // keccak256(abi.encodePacked(nft, tokenId, lendingId)) => Lending
-  mapping(bytes => Lending) private lendings;
-  // keccak256(abi.encodePacked(nft, tokenId, rentingId)) => Lending
-  mapping(bytes => Renting) private rentings;
-  // keccak256(abi.enocdePacked(nft, tokenId)) => lendingId => true / false
-  mapping(bytes => LendingRenting) private lendingRenting;
+  // 32 bytes key to 64 bytes struct
+  mapping(bytes32 => LendingRenting) private lendingRenting;
 
   function lendOne(
     IERC721 _nftAddress,
@@ -93,9 +89,12 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder, ChiGasSaver {
     // 120k gas ...
     _nftAddress.safeTransferFrom(msg.sender, address(this), _tokenId);
 
+    LendingRenting storage pair = lendingRenting[keccak256(
+      abi.encodePacked(address(_nftAddress), _tokenId, id)
+    )];
+
     // 29.7k gas
-    lendings[abi.encodePacked(_nftAddress, _tokenId, uint8(0))] = Lending({
-      id: uint8(0),
+    Lending memory lending = Lending({
       lenderAddress: msg.sender,
       maxRentDuration: _maxRentDuration,
       dailyRentPrice: _dailyRentPrice,
@@ -103,48 +102,57 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder, ChiGasSaver {
       paymentToken: _paymentToken
     });
 
+    pair.lending = lending;
+
     emit Lent(
       address(_nftAddress),
       _tokenId,
       msg.sender,
+      id,
       _maxRentDuration,
       _dailyRentPrice,
       _nftPrice,
       _paymentToken
     );
+
+    // changing from non-zero to something else costs 5000 gas
+    // however, changing from zero to something else costs 20k gas
+    id++;
   }
 
-  // function lendMultiple(
-  //   address[] calldata _nftAddresses,
-  //   uint256[] calldata _tokenIds,
-  //   uint256[] calldata _maxRentDurations,
-  //   uint256[] calldata _dailyRentPrice,
-  //   uint256[] calldata _nftPrices,
-  //   address[] calldata _paymentTokenAddresses
-  // ) external {
-  //   require(_nftAddresses.length == _tokenIds.length, "length not equal");
-  //   require(_tokenIds.length == _maxRentDurations.length, "length not equal");
-  //   require(
-  //     _maxRentDurations.length == _dailyRentPrice.length,
-  //     "length not equal"
-  //   );
-  //   require(_dailyRentPrice.length == _nftPrices.length, "length not equal");
-  //   require(
-  //     _nftPrices.length == _paymentTokenAddresses.length,
-  //     "length not equal"
-  //   );
+  function lendMultiple(
+    IERC721[] calldata _nftAddresses,
+    uint256[] calldata _tokenIds,
+    uint16[] calldata _maxRentDurations,
+    uint32[] calldata _dailyRentPrice,
+    uint32[] calldata _nftPrices,
+    uint8[] calldata _paymentTokenAddresses,
+    address payable[] calldata _gasSponsors
+  ) external {
+    require(_nftAddresses.length == _tokenIds.length, "length not equal");
+    require(_tokenIds.length == _maxRentDurations.length, "length not equal");
+    require(
+      _maxRentDurations.length == _dailyRentPrice.length,
+      "length not equal"
+    );
+    require(_dailyRentPrice.length == _nftPrices.length, "length not equal");
+    require(
+      _nftPrices.length == _paymentTokenAddresses.length,
+      "length not equal"
+    );
 
-  //   for (uint256 i = 0; i < _nftAddresses.length; i++) {
-  //     lendOne(
-  //       _nftAddresses[i],
-  //       _tokenIds[i],
-  //       _maxRentDurations[i],
-  //       _dailyRentPrice[i],
-  //       _nftPrices[i],
-  //       _paymentTokenAddresses[i]
-  //     );
-  //   }
-  // }
+    for (uint256 i = 0; i < _nftAddresses.length; i++) {
+      lendOne(
+        _nftAddresses[i],
+        _tokenIds[i],
+        _maxRentDurations[i],
+        _dailyRentPrice[i],
+        _nftPrices[i],
+        _paymentTokenAddresses[i],
+        _gasSponsors[i]
+      );
+    }
+  }
 
   // function rentOne(
   //   address _nftAddress,
