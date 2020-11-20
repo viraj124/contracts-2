@@ -49,13 +49,13 @@ const mintFace = async ({face, accounts}) => {
 const prettyPrint = ({fileName, consolePrefix, gasUsed}) => {
   let prevGasEstimate = "";
 
+  fs.writeFileSync(`estimate-gas/${fileName}`, gasUsed);
+
   try {
     prevGasEstimate = Number(fs.readFileSync(`estimate-gas/${fileName}`));
   } catch (err) {
     console.error(err);
   }
-
-  fs.writeFileSync(`estimate-gas/${fileName}`, gasUsed);
 
   let chalkColor = "";
   if (gasUsed > 100000) {
@@ -66,8 +66,13 @@ const prettyPrint = ({fileName, consolePrefix, gasUsed}) => {
     chalkColor = "green";
   }
 
-  log(`${consolePrefix}  gasUsed:`, chalk[chalkColor].bold(gasUsed));
-
+  const dollarCostEstimate = ((gasUsed * 30) / 1e9) * 470;
+  log("* 💾 " + chalk.blue("GAS ANALYSIS") + " *");
+  log(`${consolePrefix} gasUsed:`, chalk[chalkColor].bold(gasUsed));
+  log(
+    `${consolePrefix} @ 30 gwei $470/ETH : ~$${dollarCostEstimate.toFixed(2)}`
+  );
+  log(`${consolePrefix} with CHI: ~$${(dollarCostEstimate / 2).toFixed(2)}`);
   if (prevGasEstimate) {
     const prevColor = prevGasEstimate > gasUsed ? "green" : "red";
     log(
@@ -102,39 +107,209 @@ const lendOne = async ({face, rent, accounts}) => {
   );
   const {gasUsed} = receipt;
   prettyPrint({
-    fileName: "renft/lendOne.text",
-    consolePrefix: "lendOne",
+    fileName: "renft/lendOne.txt",
+    consolePrefix: "[lendOne]",
     gasUsed
   });
 };
 
 const lendMultiple = async ({face, rent}) => {
   const {receipt} = await rent.lendMultiple(
-    [face.address, face.address, face.address], // nftAddress
-    ["2", "3", "4"], // tokenId
-    ["42", "42", "42"], // maxRentDuration
-    ["42", "42", "42"], // dailyRentPrice
-    ["42", "42", "42"], // nftPrice
-    ["0", "0", "0"], // paymentToken
-    [rent.address, rent.address, rent.address] // gasSponsor
+    [
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address
+    ], // nftAddress
+    ["2", "3", "4", "5", "6", "7", "8", "9"], // tokenId
+    ["42", "42", "42", "21", "21", "21", "21", "21"], // maxRentDuration
+    ["42", "42", "42", "21", "21", "21", "21", "21"], // dailyRentPrice
+    ["42", "42", "42", "21", "21", "21", "21", "21"], // nftPrice
+    ["0", "0", "0", "0", "0", "0", "0", "0"], // paymentToken
+    [
+      rent.address,
+      rent.address,
+      rent.address,
+      rent.address,
+      rent.address,
+      rent.address,
+      rent.address,
+      rent.address
+    ] // gasSponsor
   );
   const {gasUsed} = receipt;
   prettyPrint({
     fileName: "renft/lendMultiple.txt",
-    consolePrefix: "lendMultiple",
+    consolePrefix: "[lendMultiple 8]",
     gasUsed
   });
+
+  await rent.lendMultiple(
+    [
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address
+    ], // nftAddress
+    ["10", "11", "12", "13", "14", "15", "16", "17", "18"], // tokenId
+    ["42", "42", "42", "21", "21", "21", "21", "21", "21"], // maxRentDuration
+    ["42", "42", "42", "21", "21", "21", "21", "21", "21"], // dailyRentPrice
+    ["42", "42", "42", "21", "21", "21", "21", "21", "21"], // nftPrice
+    ["0", "0", "0", "0", "0", "0", "0", "0", "0"], // paymentToken
+    [
+      rent.address,
+      rent.address,
+      rent.address,
+      rent.address,
+      rent.address,
+      rent.address,
+      rent.address,
+      rent.address,
+      rent.address
+    ] // gasSponsor
+  );
 };
 
-const rentOne = async ({rent, face, accounts}) => {
+const rentOne = async ({rent, face, accounts, verbose = true}) => {
   // nftAddress, tokenId, id, rentDuration
   const {receipt} = await rent.rentOne(face.address, "1", "1", "1", {
     from: accounts[1]
   });
   const {gasUsed} = receipt;
+  if (verbose) {
+    prettyPrint({
+      fileName: "renft/rentOne.txt",
+      consolePrefix: "[rentOne]",
+      gasUsed
+    });
+  }
+};
+
+const rentMultiple = async ({rent, face, accounts, verbose = true}) => {
+  const {receipt} = await rent.rentMultiple(
+    [
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address
+    ],
+    ["2", "3", "4", "5", "6", "7", "8", "9"],
+    ["2", "3", "4", "5", "6", "7", "8", "9"],
+    ["1", "1", "1", "1", "1", "1", "1", "1"],
+    {from: accounts[1]}
+  );
+  const {gasUsed} = receipt;
+  if (verbose) {
+    prettyPrint({
+      fileName: "renft/rentMultiple.txt",
+      consolePrefix: "[rentMultiple 8]",
+      gasUsed
+    });
+  }
+};
+
+const returnOne = async ({rent, face, accounts}) => {
+  const {receipt} = await rent.returnOne(face.address, "1", "1", {
+    from: accounts[1]
+  });
+  const {gasUsed} = receipt;
   prettyPrint({
-    fileName: "renft/rentOne.txt",
-    consolePrefix: "rentOne",
+    fileName: "renft/returnOne.txt",
+    consolePrefix: "[returnOne]",
+    gasUsed
+  });
+};
+
+const returnMultiple = async ({rent, face, accounts}) => {
+  const {receipt} = await rent.returnMultiple(
+    [
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address
+    ],
+    ["2", "3", "4", "5", "6", "7", "8", "9"],
+    ["2", "3", "4", "5", "6", "7", "8", "9"],
+    {from: accounts[1]}
+  );
+  const {gasUsed} = receipt;
+  prettyPrint({
+    fileName: "renft/returnMultiple.txt",
+    consolePrefix: "[returnMultiple 8]",
+    gasUsed
+  });
+};
+
+const claimCollateralOne = async ({face, rent}) => {
+  const {receipt} = await rent.claimCollateralOne(face.address, "1", "1");
+  const {gasUsed} = receipt;
+  prettyPrint({
+    fileName: "renft/claimCollateralOne.txt",
+    consolePrefix: "[claimCollateralOne]",
+    gasUsed
+  });
+};
+
+const claimCollateralMultiple = async ({face, rent}) => {
+  const {receipt} = await rent.claimCollateralMultiple(
+    [
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address,
+      face.address
+    ],
+    ["2", "3", "4", "5", "6", "7", "8", "9"],
+    ["2", "3", "4", "5", "6", "7", "8", "9"]
+  );
+  const {gasUsed} = receipt;
+  prettyPrint({
+    fileName: "renft/claimCollateralMultiple.txt",
+    consolePrefix: "[claimCollateralMultiple 8]",
+    gasUsed
+  });
+};
+
+const stopLendingOne = async ({face, rent}) => {
+  const {receipt} = await rent.stopLendingOne(face.address, "10", "10");
+  const {gasUsed} = receipt;
+  prettyPrint({
+    fileName: "renft/stopLendingOne.txt",
+    consolePrefix: "[stopLendingOne]",
+    gasUsed
+  });
+};
+
+const stopLendingMultiple = async ({face, rent}) => {
+  const {receipt} = await rent.stopLendingMultiple(
+    [face.address, face.address, face.address],
+    ["11", "12", "13", "14", "15", "16", "17", "18"],
+    ["11", "12", "13", "14", "15", "16", "17", "18"]
+  );
+  const {gasUsed} = receipt;
+  prettyPrint({
+    fileName: "renft/stopLendingMultiple.txt",
+    consolePrefix: "[stopLendingMultiple 8]",
     gasUsed
   });
 };
@@ -149,14 +324,24 @@ const main = async () => {
     from: accounts[1]
   });
   await pmtToken.transfer(accounts[1], ether(1000), {from: accounts[0]});
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 20; i++) {
     await mintFace({face, accounts});
   }
   await face.setApprovalForAll(rent.address, "true", {from: accounts[0]});
+  await face.setApprovalForAll(rent.address, "true", {from: accounts[1]});
 
   await lendOne({face, rent, accounts});
   await lendMultiple({face, rent});
   await rentOne({face, rent, accounts});
+  await rentMultiple({face, rent, accounts});
+  await returnOne({face, rent, accounts});
+  await returnMultiple({face, rent, accounts});
+  await rentOne({face, rent, accounts, verbose: false});
+  await rentMultiple({face, rent, accounts, verbose: false});
+  await claimCollateralOne({face, rent});
+  await claimCollateralMultiple({face, rent});
+  await stopLendingOne({face, rent});
+  await stopLendingMultiple({face, rent});
 
   log(divider);
 };
