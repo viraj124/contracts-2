@@ -126,9 +126,11 @@ const lendMultiple = async ({face, rent}) => {
   });
 };
 
-const rentOne = async ({rent, face}) => {
+const rentOne = async ({rent, face, accounts}) => {
   // nftAddress, tokenId, id, rentDuration
-  const {receipt} = await rent.rentOne(face.address, "0", "1", "0");
+  const {receipt} = await rent.rentOne(face.address, "1", "1", "1", {
+    from: accounts[1]
+  });
   const {gasUsed} = receipt;
   prettyPrint({
     fileName: "renft/rentOne.txt",
@@ -154,7 +156,7 @@ const main = async () => {
 
   await lendOne({face, rent, accounts});
   await lendMultiple({face, rent});
-  await rentOne({face, rent});
+  await rentOne({face, rent, accounts});
 
   log(divider);
 };

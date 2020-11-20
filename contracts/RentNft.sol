@@ -44,9 +44,6 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder, ChiGasSaver {
     address indexed renterAddress
   );
 
-  event PaymentIn(address paymentToken);
-  event LenderAddr(address lender);
-
   struct Lending {
     // 160 bits
     address lenderAddress;
@@ -112,8 +109,6 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder, ChiGasSaver {
     LendingRenting storage item = lendingRenting[keccak256(
       abi.encodePacked(address(_nftAddress), _tokenId, id)
     )];
-
-    emit LenderAddr(msg.sender);
 
     // 29.7k gas
     item.lending = Lending({
@@ -215,35 +210,33 @@ contract RentNft is ReentrancyGuard, Ownable, ERC721Holder, ChiGasSaver {
     uint256 rentPrice = 1 ether;
     IERC20 paymentToken = resolver.getPaymentToken(uint8(item.lending.paymentToken));
 
-    emit PaymentIn(address(paymentToken));
-    emit LenderAddr(item.lending.lenderAddress);
-    // paymentToken.safeTransferFrom(
-    //   msg.sender,
-    //   item.lending.lenderAddress,
-    //   rentPrice
-    // );
-    // paymentToken.safeTransferFrom(
-    //   msg.sender,
-    //   address(this),
-    //   item.lending.nftPrice
-    // );
+    paymentToken.safeTransferFrom(
+      msg.sender,
+      item.lending.lenderAddress,
+      rentPrice
+    );
+    paymentToken.safeTransferFrom(
+      msg.sender,
+      address(this),
+      item.lending.nftPrice
+    );
 
-    // // ! uint256 rentedAt = block.timestamp;
-    // uint16 rentedAt = 22;
+    // // // ! uint256 rentedAt = block.timestamp;
+    uint16 rentedAt = 22;
 
-    // item.renting.renterAddress = msg.sender;
-    // item.renting.rentDuration = _rentDuration;
-    // item.renting.rentedAt = rentedAt;
+    item.renting.renterAddress = msg.sender;
+    item.renting.rentDuration = _rentDuration;
+    item.renting.rentedAt = rentedAt;
 
-    // _nftAddress.safeTransferFrom(address(this), msg.sender, _tokenId);
+    _nftAddress.safeTransferFrom(address(this), msg.sender, _tokenId);
 
-    // emit Rented(
-    //   address(_nftAddress),
-    //   _tokenId,
-    //   msg.sender,
-    //   _rentDuration,
-    //   rentedAt
-    // );
+    emit Rented(
+      address(_nftAddress),
+      _tokenId,
+      msg.sender,
+      _rentDuration,
+      rentedAt
+    );
   }
 
   function rentMultiple(
